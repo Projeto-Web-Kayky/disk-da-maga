@@ -34,7 +34,7 @@
                         -
                         {% endif %}
                     </td>
-                    <td class="px-4 py-2">{{ client.name }}</td>
+                    <td class="px-4 py-2 font-bold">{{ client.name }}</td>
                     <td class="px-4 py-2">{{ client.nickname }}</td>
                     <td class="px-4 py-2">{{ client.phone_number }}</td>
                     <td class="px-4 py-2">R$ {{ client.client_debts }}</td>
@@ -58,7 +58,7 @@
                 <div class="flex justify-between items-center border-b px-4 py-2">
                     <h5 class="text-lg font-semibold">Novo Cliente</h5>
                     <button type="button" @click="open = false"
-                        class="text-gray-500 hover:text-gray-700">&times;</button>
+                        class="btn btn-ghost hover:text-gray-700">&times;</button>
                 </div>
                 <div class="p-4 space-y-4">
                     {{ form.as_p }}

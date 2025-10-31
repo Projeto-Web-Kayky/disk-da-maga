@@ -10,6 +10,7 @@ from products.views import (
     ProductCreateView,
     ProductUpdateView,
     ProductDeleteView,
+    search_products,
 )
 
 urlpatterns = [
@@ -19,6 +20,7 @@ urlpatterns = [
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
     path('products/', ProductListView.as_view(), name='product_list'),
+    path('products/search/', search_products, name='search_products'),
     path(
         'products/create/', ProductCreateView.as_view(), name='product_create'
     ),
