@@ -1,0 +1,17 @@
+asgiref==3.10.0
+black==22.1.0
+blue==0.9.1
+click==8.3.0
+colorama==0.4.6
+Django==5.2.7
+flake8==4.0.1
+mccabe==0.6.1
+mypy_extensions==1.1.0
+pathspec==0.12.1
+pillow==12.0.0
+platformdirs==4.5.0
+pycodestyle==2.8.0
+pyflakes==2.4.0
+sqlparse==0.5.3
+tomli==2.3.0
+tzdata==2025.2
