@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Disk da Maga{% endblock %}</title>
+
+    <!-- Tailwind + Preline -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/preline/dist/preline.css" rel="stylesheet">
+    <script src="https://unpkg.com/preline/dist/preline.js"></script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+
+<body class="bg-gray-100 text-gray-900">
+
+    <!-- Navbar -->
+    <header x-data="{ open: false }" class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold text-gray-800">Core Project</a>
+                </div>
+
+                {% if user.is_authenticated %}
+                <div class="flex items-center space-x-4">
+                    <!-- Dropdown de usuário -->
+                    <div class="relative" x-data="{ dropdown: false }">
+                        <button @click="dropdown = !dropdown"
+                            class="flex items-center gap-2 text-gray-700 hover:text-gray-900 focus:outline-none">
+                            {{ user.username }}
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="dropdown" @click.away="dropdown = false"
+                            class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50">
+                            <a href="{% url 'logout' %}"
+                                class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Sair</a>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{% url 'login' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
+                    Login
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="max-w-7xl mx-auto p-6">
+        {% block content %}{% endblock %}
+    </main>
+
+</body>
+
+</html>
