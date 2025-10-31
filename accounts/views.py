@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from .form import LoginForm
 
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('product_list')
@@ -21,7 +22,7 @@ def login_view(request):
             messages.error(request, 'Usuário ou senha inválidos.')
     return render(request, 'login.html', {'form': form})
 
+
 def logout_view(request):
     logout(request)
     return redirect('login')
-
