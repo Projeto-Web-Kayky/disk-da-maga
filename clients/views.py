@@ -14,5 +14,11 @@ def client_list(request):
         return redirect('client_list')
 
     return render(
-        request, 'client_list.html', {'clients': clients, 'form': form, 'section_name': 'Lista de Clientes',}
+        request,
+        'client_list.html',
+        {
+            'clients': clients,
+            'form': form,
+            'section_name': 'Lista de Clientes',
+        },
     )
