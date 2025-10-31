@@ -27,8 +27,8 @@ db.sqlite3
 db.sqlite3-journal
 
 # Media / uploads
-/media/client-photos/*
-!/media/client-photos/.gitkeep  # mantém um arquivo vazio se quiser versionar a pasta
+media/client_photos/*.jpg
+!media/client_photos/.gitkeep
 !media/**/
 
 uploads/
