@@ -27,8 +27,8 @@ db.sqlite3
 db.sqlite3-journal
 
 # Media / uploads
-media/client_photos/*.jpg
-!media/client_photos/.gitkeep
+/media/client_photos/*
+!/media/client_photos/.gitkeep
 !media/**/
 
 uploads/
