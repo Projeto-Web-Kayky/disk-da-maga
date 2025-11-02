@@ -6,6 +6,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <title>Acesso ao site | Disk da maga</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,9 +20,11 @@
 </head>
 
 <body class="bg-red-950 flex items-center justify-center min-h-screen">
+<body class="flex items-center justify-center min-h-screen">
     <!-- Card principal -->
     <div
         class="card w-full max-w-md bg-red-900/60 backdrop-blur-xl shadow-2xl rounded-2xl p-8 sm:p-10 mx-4 sm:mx-0 text-center">
+        class="card w-full max-w-md bg-red-900/40 backdrop-blur-xl shadow-2xl rounded-2xl p-8 sm:p-10 mx-4 sm:mx-0 text-center">
         <!-- Logo -->
         <figure class="mb-6">
             <img src="{% static 'images/logo-disk.png' %}" alt="Logo Disk" class="w-40 sm:w-44 md:w-48 mx-auto" />
@@ -80,6 +84,7 @@
                 Entrar
             </button>
         </form>
+        <h2 class="pt-4 text-neutral-300/60 text-xs">Powered By Zentrix Solutions</h2>
     </div>
 </body>
 
