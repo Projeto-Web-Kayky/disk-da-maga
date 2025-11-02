@@ -6,6 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <title>{% block title %}{% endblock %}</title>
 
     <!-- Tailwind + DaisyUI -->
@@ -17,6 +19,12 @@
 
     <!-- Alpine.js -->
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+        body {
+            font-family: "Montserrat", sans-serif;
+        }
+    </style>
 </head>
 
 <body class="flex flex-col min-h-screen bg-gray-100 text-gray-900">
@@ -48,22 +56,27 @@
     <div
         class="dock bg-red-800 text-white fixed bottom-0 left-0 w-full flex justify-around py-3 shadow-inner z-50 md:justify-evenly">
         <a href="{% url 'client_list' %}" class="flex flex-col items-center group">
-            <span class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125">👥</span>
+            <span
+                class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125 material-icons">group</span>
             <span class="text-xs font-medium">Clientes</span>
         </a>
 
         <a href="{% url 'product_list' %}" class="flex flex-col items-center group">
-            <span class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125">💰</span>
+            <span
+                class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125 material-icons">savings</span>
             <span class="text-xs font-medium">Vendas</span>
         </a>
 
         <a href="{% url 'product_list' %}" class="flex flex-col items-center group">
-            <span class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125">📦</span>
+            <span
+                class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125 material-symbols-outlined">trolley</span>
             <span class="text-xs font-medium">Estoque</span>
+            </span>
         </a>
 
         <a href="{% url 'product_create' %}" class="flex flex-col items-center group">
-            <span class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125">➕</span>
+            <span
+                class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125 material-symbols-outlined">add_shopping_cart</span>
             <span class="text-xs font-medium">Cadastrar Produto</span>
         </a>
     </div>
