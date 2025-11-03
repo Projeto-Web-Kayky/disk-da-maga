@@ -1,6 +1,7 @@
+from sales.views import SaleCreateView
 from . import views
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts.views import login_view, logout_view
@@ -35,4 +36,6 @@ urlpatterns = [
         name='product_delete',
     ),
     path('clients/', client_list, name='client_list'),
+    path('sales/', include('sales.urls')),
+    path('create/', SaleCreateView.as_view(), name='sale_create'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Detalhes da venda #{{ sale.id }}</h1>
+
+<p>Data: {{ sale.sale_date }}</p>
+<p>Subtotal: R$ {{ sale.subtotal }}</p>
+
+<h3>Produtos</h3>
+<ul>
+  {% for item in sale.saleitem_set.all %}
+  <li>{{ item.quantity }}x {{ item.product.name }}</li>
+  {% endfor %}
+</ul>
+
+<a href="/sales">Voltar</a>
+
+{% endblock %}
