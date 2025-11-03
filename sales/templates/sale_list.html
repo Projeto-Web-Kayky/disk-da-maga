@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="content-container">
+
+    <a href="{% url 'sale_create' %}" class="new-sale-btn">
+        Nova Venda
+    </a>
+
+    <hr class="divisor">
+
+    {% for sale in sales %}
+    <div class="sale-card">
+        <div class="sale-details">
+
+            <div class="sale-icon">
+                <span class="material-symbols-outlined">sell</span>
+            </div>
+
+            <div class="products-list">
+                {% for item in sale.saleitem_set.all|slice:":2" %}
+                <div class="product-item">
+                    {{ item.quantity }}x {{ item.product.name }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="subtotal">
+                <h3>Subtotal</h3>
+                <span>R$ {{ sale.subtotal }}</span>
+            </div>
+
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <span class="empty-icon material-symbols-outlined">sell</span>
+        <h2>Nenhuma venda encontrada</h2>
+        <p>Cadastre uma nova venda</p>
+    </div>
+    {% endfor %}
+
+</div>
+
+{% endblock %}
