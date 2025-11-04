@@ -37,5 +37,4 @@ urlpatterns = [
     ),
     path('clients/', client_list, name='client_list'),
     path('sales/', include('sales.urls')),
-    path('create/', SaleCreateView.as_view(), name='sale_create'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Nova Venda{% endblock %}
+{% block content %}
+<div class="flex justify-center mt-10">
+    <button class="btn btn-accent" onclick="document.getElementById('sale-create-modal').showModal()">➕ Nova
+        Venda</button>
+</div>
+
+<dialog id="sale-create-modal" class="modal">
+    <div class="modal-box bg-base-200 text-base-content w-11/12 max-w-md">
+        <h3 class="font-bold text-lg mb-4 text-center">Criar Nova Venda</h3>
+
+        <form hx-post="{% url 'sale_create' %}" hx-target="#sale-feedback" hx-swap="outerHTML" method="POST"
+            class="flex flex-col gap-4">
+            {% csrf_token %}
+            <label class="flex flex-col">
+                Cliente:
+                <select name="client_id" class="select select-bordered w-full">
+                    <option value="">Cliente Avulso</option>
+                    {% for client in clients %}
+                    <option value="{{ client.pk }}">{{ client.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label class="flex flex-col">
+                Nome do Cliente (opcional):
+                <input type="text" name="client_name" placeholder="Digite se cliente avulso"
+                    class="input input-bordered w-full" />
+            </label>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" class="btn"
+                    onclick="document.getElementById('sale-create-modal').close()">Cancelar</button>
+                <button type="submit" class="btn btn-accent">Criar</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>fechar</button></form>
+</dialog>
+
+<div id="sale-feedback" class="text-center mt-6"></div>
+{% endblock %}

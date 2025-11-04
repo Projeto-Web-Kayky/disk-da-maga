@@ -1,0 +1,31 @@
+<ul class="space-y-2">
+    {% if sale.items.all %}
+    {% for item in sale.items.all %}
+    <li class="flex justify-between bg-red-800/80 rounded-lg p-3 shadow text-white items-center">
+        <div>
+            <div class="font-semibold">{{ item.product.name }}</div>
+            <div class="text-sm">
+                Qtd: {{ item.quantity }} × R${{ item.price }}
+                <span class="ml-2 text-gray-300">Subtotal: R${{ item.subtotal }}</span>
+            </div>
+        </div>
+
+        <div class="text-right">
+            <form hx-post="{% url 'remove_item' sale.id item.id %}" hx-target="#sale-items" hx-swap="outerHTML"
+                method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-xs btn-error">Remover</button>
+            </form>
+        </div>
+    </li>
+    {% endfor %}
+    {% else %}
+    <p class="text-white italic text-center">Nenhum item adicionado ainda.</p>
+    {% endif %}
+</ul>
+
+<hr class="my-2 border-red-700/60">
+
+<p class="mt-2 font-bold text-lg text-white text-right">
+    Total: R${{ sale.total }}
+</p>
