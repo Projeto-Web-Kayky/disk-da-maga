@@ -29,8 +29,8 @@ O objetivo é **centralizar o gerenciamento de pedidos, produtos e estoque** em 
 ## 🧱 Estrutura do Projeto
 
 O sistema é dividido em dois módulos independentes:  
-📁 **/disk-da-maga/** → Aplicação principal *Django*
-📁 **/templates/** → Páginas HTML com Django + HTMX + Alpine
+📁 **/disk-da-maga/** → Aplicação principal *Django*  
+📁 **/templates/** → Páginas HTML com Django + HTMX + Alpine  
 📁 **/static/** → Arquivos estáticos (CSS, JS, imagens)
 
 A arquitetura é leve e desacoplada, permitindo desenvolvimento ágil, com HTMX cuidando das interações dinâmicas e Alpine.js de estados locais e componentes reativos.
