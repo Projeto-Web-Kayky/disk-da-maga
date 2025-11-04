@@ -1,3 +1,4 @@
+from sales.views import SaleCreateView
 from . import views
 from django.contrib import admin
 from django.urls import path, include
