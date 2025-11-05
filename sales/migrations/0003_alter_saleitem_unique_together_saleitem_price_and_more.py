@@ -19,13 +19,18 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='saleitem',
             name='price',
-            field=models.DecimalField(decimal_places=2, default=0, max_digits=10),
+            field=models.DecimalField(
+                decimal_places=2, default=0, max_digits=10
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
             model_name='saleitem',
             name='product',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='products.product'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to='products.product',
+            ),
         ),
         migrations.RemoveField(
             model_name='saleitem',

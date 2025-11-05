@@ -18,16 +18,22 @@ class Sale(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name='sales'
+        related_name='sales',
     )
     client_name = models.CharField(max_length=255, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        who = self.client.name if self.client else (self.client_name or 'Cliente Avulso')
-        return f"Venda #{self.pk} - {who} - {self.status}"
+        who = (
+            self.client.name
+            if self.client
+            else (self.client_name or 'Cliente Avulso')
+        )
+        return f'Venda #{self.pk} - {who} - {self.status}'
 
     @property
     def total(self):
@@ -49,10 +55,16 @@ class Sale(models.Model):
     def update_client_debt_cache(self):
         if not self.client:
             return
-        debt = Sale.objects.filter(client=self.client, status=self.STATUS_OPEN)\
-            .aggregate(total=Sum(F('items__price') * F('items__quantity')))['total'] or Decimal('0.00')
-        paid = Sale.objects.filter(client=self.client, status=self.STATUS_OPEN)\
-            .aggregate(paid=Sum('payments__amount'))['paid'] or Decimal('0.00')
+        debt = Sale.objects.filter(
+            client=self.client, status=self.STATUS_OPEN
+        ).aggregate(total=Sum(F('items__price') * F('items__quantity')))[
+            'total'
+        ] or Decimal(
+            '0.00'
+        )
+        paid = Sale.objects.filter(
+            client=self.client, status=self.STATUS_OPEN
+        ).aggregate(paid=Sum('payments__amount'))['paid'] or Decimal('0.00')
         self.client.client_debts = (debt - paid).quantize(Decimal('0.01'))
         self.client.save(update_fields=['client_debts'])
 
@@ -64,8 +76,8 @@ class Sale(models.Model):
             for item in sale_locked.items.select_related('product'):
                 if item.product.quantity < item.quantity:
                     raise ValueError(
-                        f"Estoque insuficiente para {item.product.name} "
-                        f"({item.product.quantity} disponível, {item.quantity} solicitado)."
+                        f'Estoque insuficiente para {item.product.name} '
+                        f'({item.product.quantity} disponível, {item.quantity} solicitado).'
                     )
             for item in sale_locked.items.select_related('product'):
                 item.product.quantity -= item.quantity
@@ -94,10 +106,12 @@ class Sale(models.Model):
 
     def apply_payment(self, amount, method=None, note=None):
         if amount <= 0:
-            raise ValueError("Valor do pagamento deve ser positivo.")
+            raise ValueError('Valor do pagamento deve ser positivo.')
         with transaction.atomic():
             sale_locked = Sale.objects.select_for_update().get(pk=self.pk)
-            Payment.objects.create(sale=sale_locked, amount=amount, method=method, note=note)
+            Payment.objects.create(
+                sale=sale_locked, amount=amount, method=method, note=note
+            )
             if sale_locked.paid_amount >= sale_locked.total:
                 sale_locked.finalize_and_reserve_stock()
             else:
@@ -105,7 +119,9 @@ class Sale(models.Model):
 
 
 class SaleItem(models.Model):
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='items')
+    sale = models.ForeignKey(
+        Sale, on_delete=models.CASCADE, related_name='items'
+    )
     product = models.ForeignKey('products.Product', on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -114,7 +130,7 @@ class SaleItem(models.Model):
         unique_together = ('sale', 'product')
 
     def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
+        return f'{self.product.name} x {self.quantity}'
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
@@ -141,11 +157,13 @@ class SaleItem(models.Model):
 
 
 class Payment(models.Model):
-    sale = models.ForeignKey(Sale, related_name='payments', on_delete=models.CASCADE)
+    sale = models.ForeignKey(
+        Sale, related_name='payments', on_delete=models.CASCADE
+    )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     method = models.CharField(max_length=50, null=True, blank=True)
     note = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"R${self.amount} - Venda #{self.sale_id}"
+        return f'R${self.amount} - Venda #{self.sale_id}'

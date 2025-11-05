@@ -47,7 +47,10 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
         self.object = self.get_object()
         self.object.delete()
         products = Product.objects.all()
-        return render(request, 'partials/_product_table.html', {'products': products})
+        return render(
+            request, 'partials/_product_table.html', {'products': products}
+        )
+
 
 @login_required
 def search_products(request: HttpRequest):
