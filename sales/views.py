@@ -3,6 +3,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseBadRequest
 from django.db import transaction
+from django.views.generic import CreateView
+from django.urls import reverse_lazy
 from .models import Sale, SaleItem
 from products.models import Product
 from clients.models import Client
@@ -96,7 +98,8 @@ def cancel_sale(request, sale_id):
         sale.cancel()
     except Exception as e:
         return HttpResponseBadRequest(str(e))
-    return render(request, 'sale_detail.html', {'sale': sale, 'products': Product.objects.filter(quantity__gt=0)})
+    products = Product.objects.filter(quantity__gt=0).order_by('name')
+    return render(request, 'partials/sale_detail_fragment.html', {'sale': sale, 'products': products})
 
 @require_POST
 def reopen_sale(request, sale_id):
@@ -105,7 +108,8 @@ def reopen_sale(request, sale_id):
         sale.reopen()
     except Exception as e:
         return HttpResponseBadRequest(str(e))
-    return render(request, 'sale_detail.html', {'sale': sale, 'products': Product.objects.filter(quantity__gt=0)})
+    products = Product.objects.filter(quantity__gt=0).order_by('name')
+    return render(request, 'partials/sale_detail_fragment.html', {'sale': sale, 'products': products})
 
 @require_POST
 def remove_item(request, sale_id, item_id):
@@ -122,3 +126,20 @@ def remove_item(request, sale_id, item_id):
         item.delete()
 
     return render(request, 'partials/sale_items_fragment.html', {'sale': sale})
+
+@require_POST
+def delete_sale(request, sale_id):
+    sale = get_object_or_404(Sale, pk=sale_id)
+    with transaction.atomic():
+        if sale.status == Sale.STATUS_FINALIZED:
+            # Return reserved stock before deleting
+            for item in sale.items.select_related('product'):
+                item.product.quantity += item.quantity
+                item.product.save(update_fields=['quantity'])
+        sale.delete()
+    return redirect('sale_list')
+
+class SaleCreateView(CreateView):
+    model = Sale
+    fields = ['product', 'quantity', 'price']
+    success_url = reverse_lazy('sale_list')
