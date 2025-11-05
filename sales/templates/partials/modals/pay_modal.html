@@ -1,0 +1,48 @@
+<dialog id="pay-modal" class="modal">
+    <div class="modal-box w-11/12 max-w-md border-l-8 border-green-600 shadow-2xl">
+        <h3 class="font-extrabold text-lg mb-4 text-green-700 flex items-center gap-2">
+            💵 Registrar Pagamento
+        </h3>
+
+        <form hx-indicator="#loading" hx-post="{% url 'pay_sale' sale.id %}" hx-target="#sale-detail-wrapper"
+            hx-swap="outerHTML" hx-on::after-request="document.getElementById('pay-modal').close()" method="POST"
+            class="flex flex-col gap-4">
+            {% csrf_token %}
+
+            <div>
+                <label class="text-sm font-semibold block mb-1">Valor</label>
+                <input type="number" name="amount" step="0.01" required placeholder="Ex: 150.00"
+                    class="input input-bordered w-full">
+            </div>
+
+            <div>
+                <label class="text-sm font-semibold block mb-1">Método de Pagamento</label>
+                <select name="method" class="select select-bordered w-full">
+                    <option value="pix">PIX</option>
+                    <option value="cash">Dinheiro</option>
+                    <option value="card">Cartão</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-sm font-semibold block mb-1">Observação (opcional)</label>
+                <input type="text" name="note" placeholder="Ex: Pagou metade, resto amanhã"
+                    class="input input-bordered w-full">
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" class="btn btn-outline btn-sm"
+                    onclick="document.getElementById('pay-modal').close()">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-success btn-sm">
+                    Registrar
+                </button>
+            </div>
+            </form>
+    </div>
+
+    <form method="dialog" class="modal-backdrop">
+        <button>Fechar</button>
+    </form>
+</dialog>

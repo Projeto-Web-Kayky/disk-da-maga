@@ -3,3 +3,12 @@
     <p>Pago: <strong>R${{ sale.paid_amount }}</strong></p>
     <p>Saldo: <strong>R${{ sale.balance }}</strong></p>
 </div>
+{% if close_modal %}
+<script>
+    const toast = document.createElement('div');
+    toast.textContent = 'Pagamento registrado com sucesso!';
+    toast.className = 'fixed bottom-5 right-5 bg-green-600 text-white px-4 py-2 rounded shadow-lg animate-fade-in';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+</script>
+{% endif %}

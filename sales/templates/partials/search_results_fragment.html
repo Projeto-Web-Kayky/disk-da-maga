@@ -1,0 +1,19 @@
+{% for product in products %}
+<form hx-post="{% url 'add_item' sale.id %}" hx-target="#sale-items" hx-swap="outerHTML"
+    hx-on::after-request="document.getElementById('add-item-modal').close()" method="POST"
+    class="flex justify-between items-center bg-base-100 hover:bg-base-300 transition rounded-lg p-3 shadow-sm">
+    {% csrf_token %}
+    <input type="hidden" name="product_id" value="{{ product.product_id }}">
+    <div>
+        <p class="font-semibold">{{ product.name }}</p>
+        <p class="text-sm text-base-content/70">
+            Estoque: {{ product.quantity }} | R$ {{ product.sale_price }}
+        </p>
+    </div>
+    <input type="number" name="quantity" value="1" min="1" max="{{ product.quantity }}"
+        class="input input-bordered w-16 text-center">
+    <button type="submit" class="btn btn-accent btn-sm ml-2">Adicionar</button>
+</form>
+{% empty %}
+<p class="text-sm text-center text-base-content/70 py-2">Nenhum produto encontrado.</p>
+{% endfor %}

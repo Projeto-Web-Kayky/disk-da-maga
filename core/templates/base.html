@@ -92,3 +92,12 @@
 </body>
 
 </html>
+<div id="loading"
+    class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white text-lg font-semibold">
+    Carregando...
+</div>
+
+<script>
+    document.body.addEventListener('htmx:requestStart', () => document.getElementById('loading').classList.remove('hidden'));
+    document.body.addEventListener('htmx:afterRequest', () => document.getElementById('loading').classList.add('hidden'));
+</script>
