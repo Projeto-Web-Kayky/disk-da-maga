@@ -1,14 +1,12 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.views import View
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView
 from products.models import Product
 from products.forms import ProductForm
-<<<<<<< Updated upstream
-=======
 from django.http import HttpRequest
 from django.shortcuts import render
 from django.db.models import F
->>>>>>> Stashed changes
 
 class ProductListView(LoginRequiredMixin, ListView):
     model = Product
@@ -30,9 +28,6 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
 class ProductDeleteView(LoginRequiredMixin, DeleteView):
     model = Product
     template_name = 'product_delete.html'
-<<<<<<< Updated upstream
-    success_url = '/products/'
-=======
     success_url = '/products/'
 
     def get(self, request, *args, **kwargs):
@@ -69,4 +64,3 @@ def search_products(request: HttpRequest):
     context = {'products': products}
 
     return render(request, 'partials/_product_table.html', context)
->>>>>>> Stashed changes

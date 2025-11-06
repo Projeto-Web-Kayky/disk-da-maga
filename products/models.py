@@ -20,10 +20,6 @@ class Product(models.Model):
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False, verbose_name='Preço de Venda')
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False, verbose_name='Preço de Custo')
     quantity = models.IntegerField(default=0, verbose_name='Quantidade')
-<<<<<<< Updated upstream
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Data de Criação')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Data de Atualização')
-=======
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name='Data de Criação'
     )
@@ -31,7 +27,6 @@ class Product(models.Model):
         auto_now=True, verbose_name='Data de Atualização'
     )
     low_quantity = models.IntegerField(default=0, verbose_name='Estoque Baixo')
->>>>>>> Stashed changes
 
     def __str__(self):
         return self.name
