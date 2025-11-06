@@ -1,14 +1,12 @@
-<div id="sale-payment" class="mt-2 bg-red-900 p-3 rounded-lg shadow text-white">
-    <p>Total: <strong>R${{ sale.total }}</strong></p>
-    <p>Pago: <strong>R${{ sale.paid_amount }}</strong></p>
-    <p>Saldo: <strong>R${{ sale.balance }}</strong></p>
+<div id="sale-payment">
+    <h3 class="font-bold">Resumo</h3>
+    <p>Total: R$ {{ sale.total }}</p>
+    <p>Pago: R$ {{ sale.paid_amount }}</p>
+    <p>Saldo: R$ {{ sale.balance }}</p>
+    {% if close_modal %}
+    <script>
+        // optional debug / hook
+        console.info('Pagamento registrado');
+    </script>
+    {% endif %}
 </div>
-{% if close_modal %}
-<script>
-    const toast = document.createElement('div');
-    toast.textContent = 'Pagamento registrado com sucesso!';
-    toast.className = 'fixed bottom-5 right-5 bg-green-600 text-white px-4 py-2 rounded shadow-lg animate-fade-in';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-</script>
-{% endif %}

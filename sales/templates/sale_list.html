@@ -1,64 +1,32 @@
 {% extends 'base.html' %}
-{% block title %}Histórico de Vendas{% endblock %}
-
+{% block title %}Vendas{% endblock %}
 {% block content %}
 <div class="max-w-5xl mx-auto mt-8 space-y-6">
-
-    <!-- Cabeçalho -->
     <div class="flex justify-between items-center border-b border-gray-300 pb-3">
         <h1 class="text-3xl font-extrabold text-red-800 tracking-tight">Histórico de Comandas</h1>
         <a href="{% url 'sale_create' %}" class="btn btn-accent btn-sm">+ Nova Venda</a>
     </div>
 
-    <!-- Lista de comandas -->
     <div class="space-y-4">
         {% for sale in sales %}
-        <div class="card 
-                {% if sale.status == 'open' %}bg-red-800 text-white
-                {% elif sale.status == 'finalized' %}bg-green-700 text-white
-                {% elif sale.status == 'cancelled' %}bg-gray-700 text-gray-200
-                {% else %}bg-slate-200 text-gray-800{% endif %}
-                shadow-lg hover:shadow-2xl transition duration-300 border border-gray-200">
-
-            <div class="card-body flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-
-                <!-- Detalhes da comanda -->
+        <div class="card shadow-lg rounded-lg overflow-hidden">
+            <div
+                class="card-body flex justify-between items-center {% if sale.status == 'open' %}bg-red-800 text-white{% elif sale.status == 'finalized' %}bg-green-700 text-white{% elif sale.status == 'cancelled' %}bg-gray-700 text-gray-200{% else %}bg-slate-200 text-gray-800{% endif %}">
                 <div>
                     <h2 class="text-xl font-semibold">Comanda #{{ sale.id }}</h2>
-                    <p class="text-sm opacity-90">
-                        Cliente:
-                        {% if sale.client %}
-                        {{ sale.client.name }}
-                        {% else %}
-                        {{ sale.client_name }}
-                        {% endif %}
-                    </p>
-                    <p class="text-sm opacity-90">
-                        Status: <span class="font-semibold">{{ sale.get_status_display }}</span>
-                    </p>
-                    <p class="text-sm opacity-90 mt-1">
-                        Total: <span class="font-bold">R$ {{ sale.total }}</span> |
-                        Pago: <span>R$ {{ sale.paid_amount }}</span> |
-                        Saldo: <span>R$ {{ sale.balance }}</span>
-                    </p>
+                    <p class="text-sm opacity-90">Cliente: {% if sale.client %}{{ sale.client.name }}{% else %}{{
+                        sale.client_name }}{% endif %}</p>
+                    <p class="text-sm opacity-90">Total: R$ {{ sale.total }} | Pago: R$ {{ sale.paid_amount }} | Saldo:
+                        R$ {{ sale.balance }}</p>
                 </div>
-
-                <!-- Ações -->
-                <div class="flex gap-2 justify-end">
-                    <a href="{% url 'sale_detail' sale.id %}"
-                        class="btn btn-sm btn-outline border-white text-white hover:bg-white 
-                        {% if sale.status == 'open' %}hover:text-red-800{% elif sale.status == 'finalized' %}hover:text-green-800{% else %}hover:text-gray-800{% endif %}">
-                        Ver Detalhes
-                    </a>
+                <div>
+                    <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm btn-outline">Ver</a>
                 </div>
             </div>
         </div>
         {% empty %}
-        <div class="alert alert-warning shadow-lg bg-yellow-100 text-gray-900 border-l-4 border-yellow-500">
-            Nenhuma venda registrada ainda.
-        </div>
+        <div class="alert alert-warning">Nenhuma venda registrada.</div>
         {% endfor %}
     </div>
-
 </div>
 {% endblock %}

@@ -2,24 +2,17 @@
 {% block title %}Comanda #{{ sale.id }}{% endblock %}
 {% block content %}
 
-<div id="sale-detail-wrapper" hx-trigger="load" hx-target="#sale-detail-wrapper" hx-swap="outerHTML"
-    class="p-6 max-w-6xl mx-auto space-y-8">
+<div class="p-6 max-w-6xl mx-auto space-y-8">
 
     <!-- Cabeçalho -->
-    <div
-        class="flex flex-wrap justify-between items-center rounded-2xl p-6 shadow-md border-l-8 {{ header_color }} bg-base-100 transition">
-        <div class="space-y-1">
-            <h2 class="text-3xl font-extrabold flex items-center gap-2">
-                🧾 Comanda #{{ sale.id }}
-            </h2>
-            <p class="text-sm text-gray-600">
-                Cliente:
-                <span class="font-semibold text-gray-900">
-                    {% if sale.client %}{{ sale.client.name }}{% else %}{{ sale.client_name }}{% endif %}
-                </span>
+    <div class="flex justify-between items-center rounded-2xl p-6 shadow-md border-l-8 {{ header_color }} bg-base-100">
+        <div>
+            <h2 class="text-3xl font-extrabold">🧾 Comanda #{{ sale.id }}</h2>
+            <p class="text-sm text-gray-600">Cliente:
+                <span class="font-semibold text-gray-900">{% if sale.client %}{{ sale.client.name }}{% else %}{{
+                    sale.client_name }}{% endif %}</span>
             </p>
-            <p class="text-sm text-gray-600">
-                Status:
+            <p class="text-sm text-gray-600">Status:
                 <span
                     class="font-semibold {% if sale.status == 'open' %}text-accent{% elif sale.status == 'finalized' %}text-success{% else %}text-error{% endif %}">
                     {{ sale.get_status_display }}
@@ -27,91 +20,31 @@
             </p>
         </div>
 
-        <div class="flex flex-wrap gap-2 mt-3 md:mt-0">
+        <div class="flex gap-2">
             {% if sale.status == 'open' %}
-            <button class="btn btn-accent btn-sm flex items-center gap-1"
-                onclick="document.getElementById('add-item-modal').showModal()">
-                <i class="fa fa-plus"></i> Adicionar Item
-            </button>
+            <button class="btn btn-success btn-sm" onclick="document.getElementById('pay-modal').showModal()">💸
+                Registrar Pagamento</button>
+            <button class="btn btn-accent btn-sm" onclick="document.getElementById('add-item-modal').showModal()">+
+                Adicionar Item</button>
             {% endif %}
-            <a href="{% url 'sale_list' %}" class="btn btn-outline btn-sm">
-                ⬅ Voltar
-            </a>
+            <a href="{% url 'sale_list' %}" class="btn btn-outline btn-sm">⬅ Voltar</a>
         </div>
     </div>
 
-    <!-- Itens da Comanda -->
+    <!-- Itens -->
     <div id="sale-items" class="card bg-base-100 shadow-md border border-gray-200">
         <div class="card-body">
             <div class="flex justify-between items-center mb-3">
-                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                    🛒 Itens da Comanda
-                </h3>
-
+                <h3 class="text-lg font-semibold">🛒 Itens da Comanda</h3>
                 {% if sale.status == 'open' %}
-                <button class="btn btn-accent btn-xs" onclick="document.getElementById('add-item-modal').showModal()">
-                    + Adicionar
-                </button>
+                <button class="btn btn-xs btn-accent" onclick="document.getElementById('add-item-modal').showModal()">+
+                    Adicionar</button>
                 {% endif %}
             </div>
 
-            <div class="divider my-2"></div>
+            <div class="divider"></div>
 
             {% include 'partials/sale_items_fragment.html' %}
-        </div>
-    </div>
-
-    <!-- Resumo e Ações -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="md:col-span-2"></div>
-
-        <div id="sale-payment" class="card bg-base-100 border border-gray-200 shadow-md">
-            <div class="card-body space-y-4">
-
-                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                    💰 Resumo da Comanda
-                </h3>
-
-                <div class="text-sm space-y-1">
-                    <p>Total: <span class="font-semibold text-success">R$ {{ sale.total }}</span></p>
-                    <p>Pago: <span>R$ {{ sale.paid_amount }}</span></p>
-                    <p>Saldo: <span>R$ {{ sale.balance }}</span></p>
-                </div>
-
-                <div class="divider my-2"></div>
-
-                {% if sale.status == 'open' %}
-                <button class="btn btn-success btn-sm w-full"
-                    onclick="document.getElementById('pay-modal').showModal()">
-                    💸 Registrar Pagamento
-                </button>
-
-                <form hx-post="{% url 'cancel_sale' sale.id %}" hx-target="#sale-detail-wrapper" hx-swap="outerHTML"
-                    method="POST">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-warning btn-sm w-full mt-2">
-                        ❌ Cancelar Comanda
-                    </button>
-                </form>
-
-                {% elif sale.status == 'finalized' %}
-                <div class="alert alert-success text-sm shadow-sm">
-                    ✅ Esta comanda está finalizada.
-                </div>
-
-                {% elif sale.status == 'cancelled' %}
-                <div class="alert alert-error text-sm shadow-sm">
-                    🚫 Esta comanda foi cancelada.
-                </div>
-                <form hx-post="{% url 'reopen_sale' sale.id %}" hx-target="#sale-detail-wrapper" hx-swap="outerHTML"
-                    method="POST">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-accent btn-sm w-full mt-2">
-                        🔄 Reabrir Comanda
-                    </button>
-                </form>
-                {% endif %}
-            </div>
         </div>
     </div>
 
@@ -120,4 +53,5 @@
     {% include 'partials/modals/pay_modal.html' %}
 
 </div>
+
 {% endblock %}
