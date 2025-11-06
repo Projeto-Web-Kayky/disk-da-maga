@@ -1,3 +1,4 @@
+from . import views
 from sales.views import SaleCreateView
 from . import views
 from django.contrib import admin

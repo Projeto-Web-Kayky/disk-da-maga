@@ -1,11 +1,12 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
+from django.views import View
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView
 from products.models import Product
 from products.forms import ProductForm
 from django.http import HttpRequest
 from django.shortcuts import render
-
+from django.db.models import F
 
 class ProductListView(LoginRequiredMixin, ListView):
     model = Product
@@ -53,16 +54,16 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
 def search_products(request: HttpRequest):
     search = request.GET.get('search', '')
     filter_option = request.GET.get('filter', '')
-
+    
     products = Product.objects.all()
 
     if search:
         products = products.filter(name__icontains=search)
 
     if filter_option == 'estoque_baixo':
-        products = products.order_by('quantity')
-    elif filter_option == 'estoque_alto':
-        products = products.order_by('-quantity')
+        products = products.filter(quantity__lte=F('low_quantity'))
+    elif filter_option == 'estoque_normal':
+        products = products.filter(quantity__gt=F('low_quantity'))
     elif filter_option == 'maior_preco':
         products = products.order_by('-sale_price')
     elif filter_option == 'menor_preco':

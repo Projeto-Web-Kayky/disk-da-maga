@@ -43,6 +43,7 @@ class Product(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True, verbose_name='Data de Atualização'
     )
+    low_quantity = models.IntegerField(default=0, verbose_name='Estoque Baixo')
 
     def __str__(self):
         return self.name

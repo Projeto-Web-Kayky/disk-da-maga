@@ -6,6 +6,7 @@
                 <th class="px-6 py-3 text-left whitespace-nowrap">Preço</th>
                 <th class="px-6 py-3 text-left whitespace-nowrap">Categoria</th>
                 <th class="px-6 py-3 text-left whitespace-nowrap">Quantidade</th>
+                <th class="px-6 py-3 text-left whitespace-nowrap">Status</th>
                 <th class="px-6 py-3 text-center whitespace-nowrap">Ações</th>
             </tr>
         </thead>
@@ -16,23 +17,30 @@
                 <td class="px-6 py-4 text-gray-600 whitespace-nowrap">R$ {{ product.sale_price }}</td>
                 <td class="px-6 py-4 text-gray-600 whitespace-nowrap">{{ product.get_category_display }}</td>
                 <td class="px-6 py-4 text-gray-600 whitespace-nowrap">{{ product.quantity }}</td>
-                <td class="px-6 py-4 text-center flex justify-center gap-2 whitespace-nowrap">
-                    <a href="{% url 'product_update' product.pk %}" class="btn btn-warning">
-                        Editar
-                    </a>
-                    <a href="{% url 'product_delete' product.pk %}" class="btn btn-error"
-                        hx-get="{% url 'product_delete' product.pk %}" hx-target="#modal-container" hx-swap="innerHTML">
-                        Excluir
-                    </a>
+                <td class="px-6 py-4 text-gray-600 whitespace-nowrap">
+                    {% if product.quantity <= product.low_quantity %} 
+                        <div class="badge badge-error text-white">Estoque baixo</div>
+                    {% else %}
+                        <div class="badge badge-success text-white">Estoque normal</div>
+                    {% endif %}
                 </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="px-6 py-6 text-center text-gray-500">
-                    Nenhum produto encontrado.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<td class="px-6 py-4 text-center flex justify-center gap-2 whitespace-nowrap">
+    <a href="{% url 'product_update' product.pk %}" class="btn btn-info bg-cyan-500 text-white">
+        Editar
+    </a>
+    <a href="{% url 'product_delete' product.pk %}" class="btn btn-error text-white" hx-get="{% url 'product_delete' product.pk %}"
+        hx-target="#modal-container" hx-swap="innerHTML">
+        Excluir
+    </a>
+</td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="5" class="px-6 py-6 text-center text-gray-500">
+        Nenhum produto encontrado.
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
 </div>
