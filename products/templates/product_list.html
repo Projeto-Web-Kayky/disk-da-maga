@@ -2,11 +2,6 @@
 {% block title %} Lista de Produtos {% endblock %}
 {% block content %}
 
-<div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold">Lista de Produtos</h2>
-    <a href="{% url 'product_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
-        Novo Produto
-    </a>
 <div class="flex justify-center mb-8">
     <form hx-get="{% url 'search_products' %}" hx-target="#product-table"
         hx-trigger="keyup changed delay:300ms from:#search, change from:select" hx-indicator="#loading-indicator"
