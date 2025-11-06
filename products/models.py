@@ -45,5 +45,11 @@ class Product(models.Model):
     )
     low_quantity = models.IntegerField(default=0, verbose_name='Estoque Baixo')
 
+    is_active = models.BooleanField(default=True, verbose_name='Ativo')
+
     def __str__(self):
         return self.name
+
+    def soft_delete(self):
+        self.is_active = False
+        self.save()

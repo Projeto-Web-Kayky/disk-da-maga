@@ -153,9 +153,10 @@ def search_products(request, sale_id):
     query = (request.GET.get('search') or '').strip()
     sale = get_object_or_404(Sale, pk=sale_id)
     if query:
-        products = Product.objects.filter(Q(name__icontains=query) & Q(quantity__gt=0)).order_by('name')[:20]
+        products = Product.objects.filter(Q(name__icontains=query) & Q(quantity__gt=0) & Q(is_active=True)).order_by('name')[:20]
+
     else:
-        # default listing to populate modal when empty search
-        products = Product.objects.filter(quantity__gt=0).order_by('name')[:20]
+        products = Product.objects.filter(quantity__gt=0, is_active=True).order_by('name')[:20]
+
 
     return render(request, 'partials/search_results_fragment.html', {'products': products, 'sale': sale})
