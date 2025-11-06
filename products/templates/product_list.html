@@ -1,11 +1,32 @@
 {% extends 'base.html' %}
 {% block content %}
 
+<<<<<<< Updated upstream
 <div class="flex justify-between items-center mb-6">
     <h2 class="text-2xl font-bold">Lista de Produtos</h2>
     <a href="{% url 'product_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">
         Novo Produto
     </a>
+=======
+<div class="flex justify-center mb-8">
+    <form hx-get="{% url 'search_products' %}" hx-target="#product-table"
+        hx-trigger="keyup changed delay:300ms from:#search, change from:select" hx-indicator="#loading-indicator"
+        onsubmit="return false" class="join w-full max-w-lg">
+
+        <input id="search" name="search" type="text" placeholder="Digite para buscar produto..."
+            class="input join-item w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-red-800 text-center">
+
+        <select name="filter" class="select join-item border-gray-300 focus:ring-2 focus:ring-red-800"
+            hx-get="{% url 'search_products' %}" hx-target="#product-table" hx-trigger="change"
+            hx-include="[name='search']">
+            <option value="" disabled selected>Filtrar por...</option>
+            <option value="estoque_baixo">Estoque Baixo</option>
+            <option value="estoque_normal">Estoque Normal</option>
+            <option value="maior_preco">Maior Preço</option>
+            <option value="menor_preco">Menor Preço</option>
+        </select>
+    </form>
+>>>>>>> Stashed changes
 </div>
 
 <div class="overflow-x-auto bg-white rounded-lg shadow">

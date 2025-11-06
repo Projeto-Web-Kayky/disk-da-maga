@@ -3,6 +3,12 @@ from django.views import View
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView
 from products.models import Product
 from products.forms import ProductForm
+<<<<<<< Updated upstream
+=======
+from django.http import HttpRequest
+from django.shortcuts import render
+from django.db.models import F
+>>>>>>> Stashed changes
 
 class ProductListView(LoginRequiredMixin, ListView):
     model = Product
@@ -24,4 +30,43 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
 class ProductDeleteView(LoginRequiredMixin, DeleteView):
     model = Product
     template_name = 'product_delete.html'
+<<<<<<< Updated upstream
     success_url = '/products/'
+=======
+    success_url = '/products/'
+
+    def get(self, request, *args, **kwargs):
+        """Retorna modal"""
+        self.object = self.get_object()
+        return render(request, self.template_name, {'object': self.object})
+
+    def delete(self, request, *args, **kwargs):
+        """Exclui e atualiza a tabela via HTMX"""
+        self.object = self.get_object()
+        self.object.delete()
+        products = Product.objects.all()
+        return render(request, 'partials/_product_table.html', {'products': products})
+
+@login_required
+def search_products(request: HttpRequest):
+    search = request.GET.get('search', '')
+    filter_option = request.GET.get('filter', '')
+    
+    products = Product.objects.all()
+
+    if search:
+        products = products.filter(name__icontains=search)
+
+    if filter_option == 'estoque_baixo':
+        products = products.filter(quantity__lte=F('low_quantity'))
+    elif filter_option == 'estoque_normal':
+        products = products.filter(quantity__gt=F('low_quantity'))
+    elif filter_option == 'maior_preco':
+        products = products.order_by('-sale_price')
+    elif filter_option == 'menor_preco':
+        products = products.order_by('sale_price')
+
+    context = {'products': products}
+
+    return render(request, 'partials/_product_table.html', context)
+>>>>>>> Stashed changes
