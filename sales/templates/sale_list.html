@@ -1,26 +1,32 @@
 {% extends 'base.html' %}
 {% block title %}Vendas{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto mt-6">
-    <div class="flex justify-between items-center mb-4">
-        <h1 class="text-3xl font-bold text-red-800">Vendas</h1>
-        <a href="{% url 'sale_create' %}" class="btn btn-accent">Nova Venda</a>
+<div class="max-w-5xl mx-auto mt-8 space-y-6">
+    <div class="flex justify-between items-center border-b border-gray-300 pb-3">
+        <h1 class="text-3xl font-extrabold text-red-800 tracking-tight">Histórico de Comandas</h1>
+        <a href="{% url 'sale_create' %}" class="btn btn-accent btn-sm">+ Nova Venda</a>
     </div>
 
-    <ul class="space-y-3">
+    <div class="space-y-4">
         {% for sale in sales %}
-        <li class="card bg-red-800 text-white shadow p-4 flex justify-between items-center rounded-lg">
-            <div>
-                <p class="font-bold">Comanda #{{ sale.id }}</p>
-                <p>Cliente: {% if sale.client %}{{ sale.client.name }}{% else %}{{ sale.client_name }}{% endif %}</p>
-                <p>Status: {{ sale.status|title }}</p>
-                <p>Total: R${{ sale.total }} | Pago: R${{ sale.paid_amount }} | Saldo: R${{ sale.balance }}</p>
+        <div class="card shadow-lg rounded-lg overflow-hidden">
+            <div
+                class="card-body flex justify-between items-center {% if sale.status == 'open' %}bg-red-800 text-white{% elif sale.status == 'finalized' %}bg-green-700 text-white{% elif sale.status == 'cancelled' %}bg-gray-700 text-gray-200{% else %}bg-slate-200 text-gray-800{% endif %}">
+                <div>
+                    <h2 class="text-xl font-semibold">Comanda #{{ sale.id }}</h2>
+                    <p class="text-sm opacity-90">Cliente: {% if sale.client %}{{ sale.client.name }}{% else %}{{
+                        sale.client_name }}{% endif %}</p>
+                    <p class="text-sm opacity-90">Total: R$ {{ sale.total }} | Pago: R$ {{ sale.paid_amount }} | Saldo:
+                        R$ {{ sale.balance }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm btn-outline">Ver</a>
+                </div>
             </div>
-            <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm btn-success">Ver</a>
-        </li>
+        </div>
         {% empty %}
-        <li class="text-white bg-red-900 p-4 rounded-lg shadow">Nenhuma venda registrada.</li>
+        <div class="alert alert-warning">Nenhuma venda registrada.</div>
         {% endfor %}
-    </ul>
+    </div>
 </div>
 {% endblock %}

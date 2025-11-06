@@ -8,19 +8,27 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('products', '0001_initial'),
-        ('sales', '0003_alter_saleitem_unique_together_saleitem_price_and_more'),
+        (
+            'sales',
+            '0003_alter_saleitem_unique_together_saleitem_price_and_more',
+        ),
     ]
 
     operations = [
         migrations.AlterField(
             model_name='saleitem',
             name='price',
-            field=models.DecimalField(decimal_places=2, default=0, max_digits=12),
+            field=models.DecimalField(
+                decimal_places=2, default=0, max_digits=12
+            ),
         ),
         migrations.AlterField(
             model_name='saleitem',
             name='product',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='products.product'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                to='products.product',
+            ),
         ),
         migrations.AlterUniqueTogether(
             name='saleitem',

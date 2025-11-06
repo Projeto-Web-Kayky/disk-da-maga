@@ -89,6 +89,16 @@
         </a>
     </div>
 
+    <!-- HTMX loading indicator -->
+    <div id="htmx-loading" class="hidden fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
+        <div class="bg-white p-3 rounded shadow">Carregando…</div>
+    </div>
+
+    <script>
+        document.body.addEventListener('htmx:requestStart', () => document.getElementById('htmx-loading').classList.remove('hidden'));
+        document.body.addEventListener('htmx:afterRequest', () => document.getElementById('htmx-loading').classList.add('hidden'));
+    </script>
+
 </body>
 
 </html>
