@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <script>
+        document.body.addEventListener('htmx:configRequest', function (event) {
+            var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            if (token) event.detail.headers['X-CSRFToken'] = token;
+        });
+    </script>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <title>{% block title %}{% endblock %}</title>
+
+    <!-- Tailwind + DaisyUI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.css" rel="stylesheet" type="text/css" />
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+        body {
+            font-family: "Montserrat", sans-serif;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col min-h-screen bg-gray-100 text-gray-900">
+
+    <!-- Top bar -->
+    <header class="bg-red-800 shadow-md p-4 flex justify-between items-center">
+        {% if user.is_authenticated %}
+        <span class="text-white font-semibold text-lg tracking-wide">
+            {{ section_name }}
+        </span>
+        <a href="{% url 'logout' %}"
+            class="btn btn-sm bg-white text-red-800 hover:bg-gray-100 border-none transition-all duration-200">
+            Sair
+        </a>
+        {% else %}
+        <a href="{% url 'login' %}"
+            class="btn btn-sm bg-white text-red-800 hover:bg-gray-100 border-none transition-all duration-200">
+            Login
+        </a>
+        {% endif %}
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="flex-1 p-6 pb-20">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Dock inferior -->
+    <div
+        class="dock bg-red-800 text-white fixed bottom-0 left-0 w-full flex justify-around py-3 shadow-inner z-50 md:justify-evenly">
+        <a href="{% url 'client_list' %}" class="flex flex-col items-center group">
+            <span
+                class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125 material-icons">group</span>
+            <span class="text-xs font-medium">Clientes</span>
+        </a>
+
+        <a href="{% url 'sale_list' %}" class="flex flex-col items-center group">
+            <span
+                class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125 material-icons">savings</span>
+            <span class="text-xs font-medium">Vendas</span>
+        </a>
+
+        <a href="{% url 'product_list' %}" class="flex flex-col items-center group">
+            <span
+                class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125 material-symbols-outlined">trolley</span>
+            <span class="text-xs font-medium">Estoque</span>
+            </span>
+        </a>
+
+        <a href="{% url 'product_create' %}" class="flex flex-col items-center group">
+            <span
+                class="text-2xl mb-1 transition-transform duration-200 group-hover:scale-125 material-symbols-outlined">add_shopping_cart</span>
+            <span class="text-xs font-medium">Cadastrar Produto</span>
+        </a>
+    </div>
+
+</body>
+
+</html>

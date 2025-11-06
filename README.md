@@ -2,7 +2,7 @@
 
 ![Status](https://img.shields.io/badge/Status-Em_Desenvolvimento-yellow)
 ![Django](https://img.shields.io/badge/Backend-Django-dark_green)
-![Preline](https://img.shields.io/badge/Frontend-Tailwind_Preline-purple)
+![DaisyUI](https://img.shields.io/badge/Frontend-Daisy_UI-purple)
 ![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-blue)
 
 O **Disk da Maga** é um **Sistema de Controle e Gestão (SCM)** desenvolvido para auxiliar na administração do bar *Disk da Maga*.<br>
@@ -21,7 +21,7 @@ O objetivo é **centralizar o gerenciamento de pedidos, produtos e estoque** em 
 ### 💻 **Frontend**
 - **HTMX** — Reatividade no front-end sem a complexidade de um SPA
 - **Alpine.js** - Interatividade leve e declarativa no HTML
-- **Tailwind CSS + Preline UI** — Estilização moderna e responsiva
+- **Tailwind CSS + DaisyUI** — Estilização moderna e responsiva
 - **Django Templates** — Renderização server-side integrada
 
 ---
@@ -29,9 +29,9 @@ O objetivo é **centralizar o gerenciamento de pedidos, produtos e estoque** em 
 ## 🧱 Estrutura do Projeto
 
 O sistema é dividido em dois módulos independentes:  
-📁 **/disk-da-maga/** → Aplicação principal *Django*
-📁 **/templates/** → Páginas HTML com Django + HTMX + Alpine
-📁 **/static/** → Arquivos estáticos (CSS, JS, imagens, componentes Preline)
+📁 **/disk-da-maga/** → Aplicação principal *Django*  
+📁 **/templates/** → Páginas HTML com Django + HTMX + Alpine  
+📁 **/static/** → Arquivos estáticos (CSS, JS, imagens)
 
 A arquitetura é leve e desacoplada, permitindo desenvolvimento ágil, com HTMX cuidando das interações dinâmicas e Alpine.js de estados locais e componentes reativos.
 

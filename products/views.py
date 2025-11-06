@@ -13,17 +13,25 @@ class ProductListView(LoginRequiredMixin, ListView):
     template_name = 'product_list.html'
     context_object_name = 'products'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['section_name'] = 'Estoque de Produtos'
+        return context
+
+
 class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
     template_name = 'product_form.html'
     success_url = '/products/'
 
+
 class ProductUpdateView(LoginRequiredMixin, UpdateView):
     model = Product
     form_class = ProductForm
     template_name = 'product_update.html'
     success_url = '/products/'
+
 
 class ProductDeleteView(LoginRequiredMixin, DeleteView):
     model = Product

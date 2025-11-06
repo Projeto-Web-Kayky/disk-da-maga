@@ -1,41 +1,91 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" data-theme="light">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login</title>
-    <!-- Tailwind + Preline -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <title>Acesso ao site | Disk da maga</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://unpkg.com/preline/dist/preline.css" rel="stylesheet">
-    <script src="https://unpkg.com/preline/dist/preline.js"></script>
+
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.css" rel="stylesheet" type="text/css" />
+
+    <!-- CSS customizado -->
+    <link rel="stylesheet" href="{% static 'css/login.css' %}" />
 </head>
 
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<body class="bg-red-950 flex items-center justify-center min-h-screen">
 
-    <div class="bg-white shadow-md rounded-lg p-8 w-full max-w-sm">
-        <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+    <body class="flex items-center justify-center min-h-screen">
+        <!-- Card principal -->
+        <div
+            class="card w-full max-w-md bg-red-900/60 backdrop-blur-xl shadow-2xl rounded-2xl p-8 sm:p-10 mx-4 sm:mx-0 text-center">
+            <!-- Logo -->
+            <figure class="mb-6">
+                <img src="{% static 'images/logo-disk.png' %}" alt="Logo Disk" class="w-40 sm:w-44 md:w-48 mx-auto" />
+            </figure>
 
-        {% if messages %}
-        {% for message in messages %}
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {{ message }}
+            <!-- Mensagens -->
+            {% if messages %}
+            <div class="space-y-2 w-full">
+                {% for message in messages %}
+                <div class="alert alert-error text-sm py-2 px-3 w-full justify-center sm:justify-start">
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Formulário -->
+            <form method="post" novalidate class="mt-4 space-y-4 w-full">
+                {% csrf_token %}
+
+                <!-- Usuário -->
+                <div class="form-control w-full">
+                    <label for="id_username" class="label">
+                        <span class="label-text text-gray-200 font-medium">Usuário</span>
+                    </label>
+                    <input type="text" name="username" id="id_username" placeholder="Digite seu usuário"
+                        value="{{ form.username.value|default:'' }}"
+                        class="input input-bordered w-full bg-white text-gray-900 focus:border-primary focus:ring focus:ring-primary/20" />
+                    {% if form.username.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error">
+                            {{ form.username.errors.0 }}
+                        </span>
+                    </label>
+                    {% endif %}
+                </div>
+
+                <!-- Senha -->
+                <div class="form-control w-full">
+                    <label for="id_password" class="label">
+                        <span class="label-text text-gray-200 font-medium">Senha</span>
+                    </label>
+                    <input type="password" name="password" id="id_password" placeholder="Digite sua senha"
+                        class="input input-bordered w-full bg-white text-gray-900 focus:border-primary focus:ring focus:ring-primary/20" />
+                    {% if form.password.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error">
+                            {{ form.password.errors.0 }}
+                        </span>
+                    </label>
+                    {% endif %}
+                </div>
+
+                <!-- Botão -->
+                <button type="submit"
+                    class="btn w-full bg-green-800 hover:bg-green-900 border-none shadow-md hover:shadow-lg transition-all duration-200 text-white">
+                    Entrar
+                </button>
+            </form>
+            <h2 class="pt-4 text-neutral-300/60 text-xs">Powered By Zentrix Solutions</h2>
         </div>
-        {% endfor %}
-        {% endif %}
-
-        <form method="post" novalidate class="space-y-4">
-            {% csrf_token %}
-
-            {{ form.as_p }}
-
-            <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
-                Entrar
-            </button>
-        </form>
-    </div>
-
-</body>
+    </body>
 
 </html>
