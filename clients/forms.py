@@ -11,6 +11,10 @@ class ClientForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             field.widget.attrs.update({'class': 'input input-bordered w-full'})
-            
+
             if name == 'photo':
-                field.widget.attrs.update({'class': 'file-input file-input-bordered w-full text-white bg-green-800 border-green-800'})
+                field.widget.attrs.update(
+                    {
+                        'class': 'file-input file-input-bordered w-full text-white bg-green-800 border-green-800'
+                    }
+                )

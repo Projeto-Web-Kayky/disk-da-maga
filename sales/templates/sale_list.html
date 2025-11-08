@@ -1,47 +1,32 @@
-{% extends "base.html" %}
-{% load static %}
-
+{% extends 'base.html' %}
+{% block title %}Vendas{% endblock %}
 {% block content %}
+<div class="max-w-5xl mx-auto mt-8 space-y-6">
+    <div class="flex justify-between items-center border-b border-gray-300 pb-3">
+        <h1 class="text-3xl font-extrabold tracking-tight">Histórico de Comandas</h1>
+        <a href="{% url 'sale_create' %}" class="btn bg-red-800 hover:bg-red-900 border-none btn-sm text-white">+ Nova Venda</a>
+    </div>
 
-<div class="content-container">
-
-    <a href="{% url 'sale_create' %}" class="new-sale-btn">
-        Nova Venda
-    </a>
-
-    <hr class="divisor">
-
-    {% for sale in sales %}
-    <div class="sale-card">
-        <div class="sale-details">
-
-            <div class="sale-icon">
-                <span class="material-symbols-outlined">sell</span>
-            </div>
-
-            <div class="products-list">
-                {% for item in sale.saleitem_set.all|slice:":2" %}
-                <div class="product-item">
-                    {{ item.quantity }}x {{ item.product.name }}
+    <div class="space-y-4">
+        {% for sale in sales %}
+        <div class="card shadow-lg rounded-lg overflow-hidden">
+            <div
+                class="card-body flex justify-between items-center {% if sale.status == 'open' %}bg-red-800 text-white{% elif sale.status == 'finalized' %}bg-green-700 text-white{% elif sale.status == 'cancelled' %}bg-gray-700 text-gray-200{% else %}bg-slate-200 text-gray-800{% endif %}">
+                <div>
+                    <h2 class="text-xl font-semibold">Comanda #{{ sale.id }}</h2>
+                    <p class="text-sm opacity-90">Cliente: {% if sale.client %}{{ sale.client.name }}{% else %}{{
+                        sale.client_name }}{% endif %}</p>
+                    <p class="text-sm opacity-90">Total: R$ {{ sale.total }} | Pago: R$ {{ sale.paid_amount }} | Saldo:
+                        R$ {{ sale.balance }}</p>
                 </div>
-                {% endfor %}
+                <div>
+                    <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm bg-white hover:bg-stone-400 border-none">Abrir comanda</a>
+                </div>
             </div>
-
-            <div class="subtotal">
-                <h3>Subtotal</h3>
-                <span>R$ {{ sale.subtotal }}</span>
-            </div>
-
         </div>
+        {% empty %}
+        <div class="alert alert-warning">Nenhuma venda registrada.</div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="empty-state">
-        <span class="empty-icon material-symbols-outlined">sell</span>
-        <h2>Nenhuma venda encontrada</h2>
-        <p>Cadastre uma nova venda</p>
-    </div>
-    {% endfor %}
-
 </div>
-
 {% endblock %}
