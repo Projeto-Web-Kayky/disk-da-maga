@@ -4,4 +4,65 @@
 
 {% include 'partials/sale_detail_fragment.html' %}
 
+<!-- Cabeçalho -->
+<div class="flex justify-between items-center rounded-2xl p-6 shadow-md border-l-8 {{ header_color }} bg-base-100">
+    <div>
+        <h2 class="text-3xl font-extrabold">
+            <span class="material-symbols-outlined text-lg">contract</span> Comanda #{{ sale.id }}
+        </h2>
+        <p class="text-sm text-gray-600">Cliente:
+            <span class="font-semibold text-gray-900">{% if sale.client %}{{ sale.client.name }}{% else %}{{
+                sale.client_name }}{% endif %}</span>
+        </p>
+        <p class="text-sm text-gray-600">Status:
+            <span
+                class="font-semibold {% if sale.status == 'open' %}text-green-600{% elif sale.status == 'finalized' %}text-success{% else %}text-error{% endif %}">
+                {{ sale.get_status_display }}
+            </span>
+        </p>
+    </div>
+
+    <div class="flex gap-2">
+        {% if sale.status == 'open' %}
+        <button class="btn btn-success btn-sm text-white"
+            onclick="document.getElementById('pay-modal').showModal()"><span class="material-symbols-outlined">
+                money_bag
+            </span>
+            Registrar Pagamento</button>
+        <button class="btn btn-warning text-white btn-sm"
+            onclick="document.getElementById('add-item-modal').showModal()">+
+            Adicionar Item</button>
+        {% endif %}
+        <a href="{% url 'sale_list' %}" class="btn btn-outline btn-error btn-sm hover:text-white">⬅ Voltar</a>
+    </div>
+</div>
+
+<!-- Itens -->
+<div id="sale-items" class="card bg-base-100 shadow-md border border-gray-200">
+    <div class="card-body">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-lg font-semibold">
+                <span class="material-symbols-outlined">
+                    shopping_cart
+                </span> Itens da Comanda
+            </h3>
+            {% if sale.status == 'open' %}
+            <button class="btn btn-xs btn-success text-white"
+                onclick="document.getElementById('add-item-modal').showModal()">+
+                Adicionar</button>
+            {% endif %}
+        </div>
+
+        <div class="divider"></div>
+
+        {% include 'partials/sale_items_fragment.html' %}
+    </div>
+</div>
+
+<!-- Modais -->
+{% include 'partials/modals/add_item_modal.html' %}
+{% include 'partials/modals/pay_modal.html' %}
+
+</div>
+
 {% endblock %}

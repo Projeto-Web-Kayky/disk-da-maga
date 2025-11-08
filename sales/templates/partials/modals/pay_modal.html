@@ -1,0 +1,28 @@
+<dialog id="pay-modal" class="modal">
+    <div class="modal-box w-11/12 max-w-md border-l-8 border-green-500 bg-base-200 text-base-content">
+        <h3 class="font-extrabold text-lg mb-4 text-green-700"><span class="material-symbols-outlined leading-none">
+                money_bag
+            </span> Registrar Pagamento</h3>
+
+        <form hx-post="{pay_sale' sale.id %}" hx-target="#sale-items" hx-swap="outerHTML"
+            hx-on="htmx:afterRequest: document.getElementById('pay-modal') && document.getElementById('pay-modal').close()"
+            method="POST" class="flex flex-col gap-3">
+            {% csrf_token %}
+            <input type="number" name="amount" step="0.01" required placeholder="Valor a pagar"
+                class="input input-bordered">
+            <select name="method" class="select select-bordered">
+                <option value="pix">PIX</option>
+                <option value="cash">Dinheiro</option>
+                <option value="card">Cartão</option>
+            </select>
+            <input type="text" name="note" placeholder="Observação (opcional)" class="input input-bordered">
+
+            <div class="flex justify-end gap-2 mt-2">
+                <button type="button" class="btn btn-outline btn-error"
+                    onclick="document.getElementById('pay-modal').close()">Cancelar</button>
+                <button type="submit" class="btn btn-success text-white">Registrar</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>Fechar</button></form>
+</dialog>

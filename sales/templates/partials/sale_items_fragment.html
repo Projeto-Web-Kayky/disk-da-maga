@@ -1,31 +1,32 @@
-<ul class="space-y-2">
-    {% if sale.items.all %}
+<div id="sale-items-list" class="space-y-3">
+    {% if sale.items.exists %}
     {% for item in sale.items.all %}
-    <li class="flex justify-between bg-red-800/80 rounded-lg p-3 shadow text-white items-center">
+    <div class="flex justify-between items-center bg-base-200 rounded-xl p-3 shadow-sm">
         <div>
-            <div class="font-semibold">{{ item.product.name }}</div>
-            <div class="text-sm">
-                Qtd: {{ item.quantity }} × R${{ item.price }}
-                <span class="ml-2 text-gray-300">Subtotal: R${{ item.subtotal }}</span>
-            </div>
+            <p class="font-semibold text-base-content">{{ item.product.name }}</p>
+            <p class="text-sm text-base-content/70">Qtd: {{ item.quantity }} — R$ {{ item.price }}</p>
         </div>
 
         <div class="text-right">
+            <p class="font-bold text-success">R$ {{ item.price|floatformat:2 }}</p>
+
+            {% if sale.status == 'open' %}
             <form hx-post="{% url 'remove_item' sale.id item.id %}" hx-target="#sale-items" hx-swap="outerHTML"
-                method="POST">
+                method="POST" class="mt-2 inline">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-xs btn-error">Remover</button>
+                <button type="submit" class="btn btn-ghost btn-xs text-error gap-[0px]hover:bg-error/10"><span
+                        class="material-symbols-outlined">delete</span>Excluir</button>
             </form>
+            {% endif %}
         </div>
-    </li>
+    </div>
     {% endfor %}
     {% else %}
-    <p class="text-white italic text-center">Nenhum item adicionado ainda.</p>
+    <p class="text-center text-base-content/60 py-2">Nenhum item adicionado</p>
     {% endif %}
-</ul>
 
-<hr class="my-2 border-red-700/60">
-
-<p class="mt-2 font-bold text-lg text-white text-right">
-    Total: R${{ sale.total }}
-</p>
+    <div class="flex justify-between border-t border-base-300 pt-3 mt-2">
+        <span class="font-semibold text-base-content/70">Total:</span>
+        <span class="font-bold text-success text-lg">R$ {{ sale.total }}</span>
+    </div>
+</div>
