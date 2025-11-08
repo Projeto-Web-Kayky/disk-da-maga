@@ -2,47 +2,46 @@
 {% block title %}Vendas{% endblock %}
 {% block content %}
 <div class="max-w-5xl mx-auto mt-8 space-y-6">
-    <div class="flex justify-between items-center border-b border-gray-300 pb-3">
-        <h1 class="text-3xl font-extrabold tracking-tight">Histórico de Comandas</h1>
-        <a href="{% url 'sale_create' %}" class="btn border-none bg-red-800 text-white btn-sm hover:bg-red-900">+ Nova
-            Venda</a>
-    </div>
+  <div class="flex justify-between items-center border-b border-gray-300 pb-3">
+    <h1 class="text-3xl font-extrabold tracking-tight">Histórico de Comandas</h1>
+    <a href="{% url 'sale_create' %}" class="btn border-none bg-red-800 text-white btn-sm hover:bg-red-900">+ Nova
+      Venda</a>
+  </div>
 
-    <div class="space-y-4">
-        {% for sale in sales %}
-        <div class="card shadow-lg rounded-lg overflow-hidden">
-            <div
-                class="card-body flex justify-between px-[2.5em] {% if sale.status == 'open' %}bg-red-800 text-white{% elif sale.status == 'finalized' %}bg-green-700 text-white{% elif sale.status == 'cancelled' %}bg-gray-700 text-gray-200{% else %}bg-slate-200 text-gray-800{% endif %}">
-                <div>
-                    <h2 class="text-xl font-semibold">Comanda #{{ sale.id }}</h2>
-                    <div class="block">
-                        <span
-                            class="text-sm badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg">Cliente:
-                            {% if sale.client %}{{ sale.client.name }}{% else %}{{
-                            sale.client_name }}{% endif %}</span>
-                        <div class="text-sm my-[0.5em]">
-                            <span class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Total: R$
-                                {{ sale.total }}</span>
-                            <span
-                                class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Pago:
-                            R$ {{ sale.paid_amount }} </span>
-                            <span
-                                class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Saldo:
-                            R$ {{ sale.balance }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm"> <span
-                            class="material-symbols-outlined">
-                            open_in_new
-                        </span>Abrir comanda</a>
-                </div>
+  <div class="space-y-4">
+    {% for sale in sales %}
+    <div class="card shadow-lg rounded-lg overflow-hidden">
+      <div
+        class="card-body flex justify-between px-[2.5em] {% if sale.status == 'open' %}bg-red-800 text-white{% elif sale.status == 'finalized' %}bg-green-700 text-white{% elif sale.status == 'cancelled' %}bg-gray-700 text-gray-200{% else %}bg-slate-200 text-gray-800{% endif %}">
+        <div>
+          <h2 class="text-xl font-semibold">Comanda #{{ sale.id }}</h2>
+          <div class="block">
+            <span class="text-sm badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg">
+              {%if sale.client %}
+              <label class="text-sm flex">Cliente: {{ sale.client.name }} </label>
+              {% else %}
+              <label class="text-white">Cliente sem nome</label>{% endif %}
+            </span>
+            <div class="text-sm my-[0.5em]">
+              <span class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Total:
+                R$ {{ sale.total }}</span>
+              <span class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Pago:
+                R$ {{ sale.paid_amount }} </span>
+              <span class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Saldo:
+                R$ {{ sale.balance }}</span>
             </div>
+          </div>
         </div>
-        {% empty %}
-        <div class="alert alert-warning">Nenhuma venda registrada.</div>
-        {% endfor %}
+        <div>
+          <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm"> <span class="material-symbols-outlined">
+              open_in_new
+            </span>Abrir comanda</a>
+        </div>
+      </div>
     </div>
+    {% empty %}
+    <div class="alert alert-warning bg-neutral-200 border-none">Nenhuma venda registrada.</div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}
