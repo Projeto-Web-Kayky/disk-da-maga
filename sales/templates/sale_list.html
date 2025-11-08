@@ -1,47 +1,26 @@
-{% extends "base.html" %}
-{% load static %}
-
+{% extends 'base.html' %}
+{% block title %}Vendas{% endblock %}
 {% block content %}
-
-<div class="content-container">
-
-    <a href="{% url 'sale_create' %}" class="new-sale-btn">
-        Nova Venda
-    </a>
-
-    <hr class="divisor">
-
-    {% for sale in sales %}
-    <div class="sale-card">
-        <div class="sale-details">
-
-            <div class="sale-icon">
-                <span class="material-symbols-outlined">sell</span>
-            </div>
-
-            <div class="products-list">
-                {% for item in sale.saleitem_set.all|slice:":2" %}
-                <div class="product-item">
-                    {{ item.quantity }}x {{ item.product.name }}
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="subtotal">
-                <h3>Subtotal</h3>
-                <span>R$ {{ sale.subtotal }}</span>
-            </div>
-
-        </div>
+<div class="max-w-4xl mx-auto mt-6">
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-3xl font-bold text-red-800">Vendas</h1>
+        <a href="{% url 'sale_create' %}" class="btn btn-accent">Nova Venda</a>
     </div>
-    {% empty %}
-    <div class="empty-state">
-        <span class="empty-icon material-symbols-outlined">sell</span>
-        <h2>Nenhuma venda encontrada</h2>
-        <p>Cadastre uma nova venda</p>
-    </div>
-    {% endfor %}
 
+    <ul class="space-y-3">
+        {% for sale in sales %}
+        <li class="card bg-red-800 text-white shadow p-4 flex justify-between items-center rounded-lg">
+            <div>
+                <p class="font-bold">Comanda #{{ sale.id }}</p>
+                <p>Cliente: {% if sale.client %}{{ sale.client.name }}{% else %}{{ sale.client_name }}{% endif %}</p>
+                <p>Status: {{ sale.status|title }}</p>
+                <p>Total: R${{ sale.total }} | Pago: R${{ sale.paid_amount }} | Saldo: R${{ sale.balance }}</p>
+            </div>
+            <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm btn-success">Ver</a>
+        </li>
+        {% empty %}
+        <li class="text-white bg-red-900 p-4 rounded-lg shadow">Nenhuma venda registrada.</li>
+        {% endfor %}
+    </ul>
 </div>
-
 {% endblock %}

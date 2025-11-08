@@ -1,0 +1,14 @@
+<div class="alert alert-success shadow-lg max-w-md mx-auto">
+    <div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>Comanda criada: <strong>#{{ sale.id }}</strong>. <a class="underline"
+                href="{% url 'sale_detail' sale.id %}">Abrir comanda</a></span>
+    </div>
+</div>
+<script>
+    const modal = document.getElementById('sale-create-modal');
+    if (modal && modal.open) modal.close();
+</script>
