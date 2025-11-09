@@ -7,7 +7,9 @@
   <!-- Cabeçalho -->
   <div class="flex justify-between items-center rounded-2xl p-6 shadow-md {{ header_color }} bg-red-800 text-white">
     <div>
-      <h2 class="text-3xl font-extrabold">🧾 Comanda #{{ sale.id }}</h2>
+      <h2 class="text-3xl font-extrabold"><span class="material-symbols-outlined">
+          contract
+        </span> Comanda #{{ sale.id }}</h2>
       <p class="text-sm font-semibold text-gray-900">{% if sale.client %}
         <label class="text-sm flex">Cliente: {{ sale.client.name }} </label>
         {% else %}
@@ -17,19 +19,21 @@
       <p class="text-sm">Status:
         <span
           class="font-semibold {% if sale.status == 'open' %}text-green-400{% elif sale.status == 'finalized' %}text-success{% else %}text-error{% endif %}">
-          {{ sale.get_status_display }}
-        </span>
+          {{ sale.get_status_display }}</span>
       </p>
     </div>
 
     <div class="flex gap-2">
       {% if sale.status == 'open' %}
-      <button class="btn btn-success btn-sm" onclick="document.getElementById('pay-modal').showModal()">💸
+      <button class="btn btn-success btn-sm text-white gap-[0px]"
+        onclick="document.getElementById('pay-modal').showModal()">
+        <span class="material-symbols-outlined">attach_money</span>
         Registrar Pagamento</button>
-      <button class="btn btn-accent btn-sm" onclick="document.getElementById('add-item-modal').showModal()">+
+      <button class="btn btn-warning btn-sm text-white"
+        onclick="document.getElementById('add-item-modal').showModal()">+
         Adicionar Item</button>
       {% endif %}
-      <a href="{% url 'sale_list' %}" class="btn btn-outline btn-sm">⬅ Voltar</a>
+      <a href="{% url 'sale_list' %}" class="btn btn-sm">⬅ Voltar</a>
     </div>
   </div>
 
@@ -37,9 +41,11 @@
   <div id="sale-items" class="card bg-base-100 shadow-md border border-gray-200">
     <div class="card-body">
       <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-semibold">🛒 Itens da Comanda</h3>
+        <h3 class="text-lg font-semibold flex items-center"><span class="material-symbols-outlined">
+            shopping_cart
+          </span> Itens da Comanda</h3>
         {% if sale.status == 'open' %}
-        <button class="btn btn-xs btn-accent" onclick="document.getElementById('add-item-modal').showModal()">+
+        <button class="btn btn-xs border-none bg-red-800 text-white btn-sm hover:bg-red-900" onclick="document.getElementById('add-item-modal').showModal()">+
           Adicionar</button>
         {% endif %}
       </div>
