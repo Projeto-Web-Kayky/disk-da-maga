@@ -2,10 +2,11 @@
 {% block title %}Vendas{% endblock %}
 {% block content %}
 <div class="max-w-5xl mx-auto mt-8 space-y-6">
-    <div class="flex justify-between items-center border-b border-gray-300 pb-3">
-        <h1 class="text-3xl font-extrabold tracking-tight">Histórico de Comandas</h1>
-        <a href="{% url 'sale_create' %}" class="btn bg-red-800 hover:bg-red-900 border-none btn-sm text-white">+ Nova Venda</a>
-    </div>
+  <div class="flex justify-between items-center border-b border-gray-300 pb-3">
+    <h1 class="text-3xl font-extrabold tracking-tight">Histórico de Comandas</h1>
+    <a href="{% url 'sale_create' %}" class="btn border-none bg-red-800 text-white btn-sm hover:bg-red-900">+ Nova
+      Venda</a>
+  </div>
 
     <div class="space-y-4">
         {% for sale in sales %}
@@ -20,7 +21,7 @@
                         R$ {{ sale.balance }}</p>
                 </div>
                 <div>
-                    <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm bg-white hover:bg-stone-400 border-none">Abrir comanda</a>
+                    <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm btn-outline">Ver</a>
                 </div>
             </div>
         </div>
