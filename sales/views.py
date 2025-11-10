@@ -91,12 +91,18 @@ def add_item(request, sale_id):
         return HttpResponseBadRequest('Estoque insuficiente.')
 
     with transaction.atomic():
-        SaleItem.objects.create(
-            sale=sale,
-            product=product,
-            quantity=quantity,
-            price=product.sale_price,
-        )
+        sale_item = sale.items.filter(product=product).first()
+        if sale_item:
+            sale_item.quantity += quantity
+            sale_item.save()
+        else:
+
+            SaleItem.objects.create(
+                sale=sale,
+                product=product,
+                quantity=quantity,
+                price=product.sale_price,
+            )
         # reduce stock safe-guard
         product.quantity = max(product.quantity - quantity, 0)
         product.save(update_fields=['quantity'])
@@ -147,6 +153,30 @@ def pay_sale(request, sale_id):
     sale.refresh_from_db()
     # return payment fragment (or detail fragment if you prefer)
     return render(request, 'partials/sale_payment_fragment.html', {'sale': sale, 'close_modal': True})
+
+
+def pix_qr(request, sale_id):
+    """Render a simple PIX QR screen for the given sale.
+
+    This view builds a small payload (you can replace it with a real
+    PIX payload) and uses an external QR image generator to display
+    the QR code. The client-side JS opens this view in a new window
+    when the user selects PIX as the payment method.
+    """
+    sale = get_object_or_404(Sale, pk=sale_id)
+    amount = (request.GET.get('amount') or '').strip()
+
+    if amount:
+        payload = f'PIX|sale:{sale.pk}|amount:{amount}'
+    else:
+        payload = f'PIX|sale:{sale.pk}'
+
+    context = {
+        'sale': sale,
+        'payload': payload,
+        'amount': amount,
+    }
+    return render(request, 'partials/pix_qr.html', context)
 
 
 def search_products(request, sale_id):
