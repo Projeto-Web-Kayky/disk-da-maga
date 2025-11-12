@@ -1,25 +1,30 @@
 {% extends 'base.html' %}
 {% block title %}Comanda #{{ sale.id }}{% endblock %}
-{% block content %}
 
+{% block content %}
 <div class="p-6 max-w-6xl mx-auto space-y-8">
 
   <!-- Cabeçalho -->
-  <div class="flex justify-between items-center rounded-2xl p-6 shadow-md {{ header_color }} bg-red-800 text-white">
+  <div class="flex justify-between items-center rounded-2xl p-6 shadow-md {{ header_color }}">
     <div>
-      <h2 class="text-3xl font-extrabold"><span class="material-symbols-outlined">
-          contract
-        </span> Comanda #{{ sale.id }}</h2>
-      <p class="text-sm font-semibold text-gray-900">{% if sale.client %}
-        <label class="text-sm flex">Cliente: {{ sale.client.name }} </label>
-        {% else %}
-        <label class="text-white">Cliente sem nome</label>{% endif %}
+      <h2 class="text-3xl font-extrabold flex items-center gap-1">
+        <span class="material-symbols-outlined">contract</span>
+        Comanda #{{ sale.id }}
+      </h2>
+
+      <p class="text-sm opacity-90">
+        Cliente:
+        {{ sale.client.name|default:sale.client_name|default:"Avulso" }}
       </p>
 
-      <p class="text-sm">Status:
-        <span
-          class="font-semibold {% if sale.status == 'open' %}text-green-400{% elif sale.status == 'finalized' %}text-success{% else %}text-error{% endif %}">
-          {{ sale.get_status_display }}</span>
+      <p class="text-sm">
+        Status:
+        <span class="font-semibold
+          {% if sale.status == 'open' %}text-green-400
+          {% elif sale.status == 'finalized' %}text-success
+          {% else %}text-error{% endif %}">
+          {{ sale.get_status_display|default:"Indefinido" }}
+        </span>
       </p>
     </div>
 
@@ -28,30 +33,34 @@
       <button class="btn btn-success btn-sm text-white gap-[0px]"
         onclick="document.getElementById('pay-modal').showModal()">
         <span class="material-symbols-outlined">attach_money</span>
-        Registrar Pagamento</button>
-      <button class="btn btn-warning btn-sm text-white"
-        onclick="document.getElementById('add-item-modal').showModal()">+
-        Adicionar Item</button>
+        Registrar Pagamento
+      </button>
+
+      <button class="btn btn-warning btn-sm text-white" onclick="document.getElementById('add-item-modal').showModal()">
+        + Adicionar Item
+      </button>
       {% endif %}
       <a href="{% url 'sale_list' %}" class="btn btn-sm">⬅ Voltar</a>
     </div>
   </div>
 
-  <!-- Itens -->
+  <!-- Itens da Comanda -->
   <div id="sale-items" class="card bg-base-100 shadow-md border border-gray-200">
     <div class="card-body">
       <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-semibold flex items-center"><span class="material-symbols-outlined">
-            shopping_cart
-          </span> Itens da Comanda</h3>
+        <h3 class="text-lg font-semibold flex items-center gap-1">
+          <span class="material-symbols-outlined">shopping_cart</span>
+          Itens da Comanda
+        </h3>
         {% if sale.status == 'open' %}
-        <button class="btn btn-xs border-none bg-red-800 text-white btn-sm hover:bg-red-900" onclick="document.getElementById('add-item-modal').showModal()">+
-          Adicionar</button>
+        <button class="btn btn-xs border-none bg-red-800 text-white hover:bg-red-900"
+          onclick="document.getElementById('add-item-modal').showModal()">
+          + Adicionar
+        </button>
         {% endif %}
       </div>
 
       <div class="divider"></div>
-
       {% include 'partials/sale_items_fragment.html' %}
     </div>
   </div>
@@ -61,5 +70,4 @@
   {% include 'partials/modals/pay_modal.html' %}
 
 </div>
-
 {% endblock %}

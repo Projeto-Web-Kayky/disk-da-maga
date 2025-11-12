@@ -11,14 +11,14 @@
         hx-target="#product-search-results" hx-swap="innerHTML" autocomplete="off">
     </div>
 
-    <div id="product-search-results" class="space-y-2 max-h-64 overflow-y-auto">
-      {% include 'partials/search_results_fragment.html' %}
-    </div>
+        <div id="product-search-results" class="space-y-2 max-h-64 overflow-y-auto">
+            {% include 'partials/search_results_fragment.html' %}
+        </div>
 
-    <div class="flex justify-end gap-2 mt-6">
-      <button type="button" class="btn btn-outline btn-sm btn-error"
-        onclick="document.getElementById('add-item-modal').close()">Cancelar</button>
+        <div class="flex justify-end gap-2 mt-6">
+            <button type="button" class="btn btn-outline btn-sm"
+                onclick="document.getElementById('add-item-modal').close()">Cancelar</button>
+        </div>
     </div>
-  </div>
-  <form method="dialog" class="modal-backdrop"><button>Fechar</button></form>
+    <form method="dialog" class="modal-backdrop"><button>Fechar</button></form>
 </dialog>

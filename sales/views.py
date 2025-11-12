@@ -11,7 +11,11 @@ from clients.models import Client
 
 def sale_list(request):
     sales = Sale.objects.all().order_by('-created_at')
-    return render(request, 'sale_list.html', {'sales': sales, 'section_name': 'Lista de Vendas'})
+    return render(
+        request,
+        'sale_list.html',
+        {'sales': sales, 'section_name': 'Lista de Vendas'},
+    )
 
 
 def sale_create(request):
@@ -27,9 +31,18 @@ def sale_create(request):
                 client = None
 
         sale = Sale.objects.create(client=client, client_name=client_name)
-        return render(request, 'partials/sale_created_feedback.html', {'sale': sale})
+        return render(
+            request, 'partials/sale_created_feedback.html', {'sale': sale}
+        )
 
-    return render(request, 'sale_create.html', {'clients': clients, 'section_name': 'Cadastrar Nova Venda',})
+    return render(
+        request,
+        'sale_create.html',
+        {
+            'clients': clients,
+            'section_name': 'Cadastrar Nova Venda',
+        },
+    )
 
 
 def _get_header_color_for_sale(sale):
@@ -38,27 +51,33 @@ def _get_header_color_for_sale(sale):
         'finalized': 'border-green-600 bg-green-100 text-green-900',
         'cancelled': 'border-gray-500 bg-gray-200 text-gray-700',
     }
-    return color_map.get(sale.status, 'border-slate-600 bg-slate-100 text-slate-900')
+    return color_map.get(
+        sale.status, 'border-slate-600 bg-slate-100 text-slate-900'
+    )
 
 
 def sale_detail(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
     header_color = _get_header_color_for_sale(sale)
-    # always provide products so modal includes have data
     products = Product.objects.filter(quantity__gt=0).order_by('name')
 
+    client_name = (
+        sale.client.name if sale.client else (sale.client_name or "Avulso")
+    )
+
     context = {
-        'sale': sale,
-        'products': products,
-        'header_color': header_color,
-        'section_name': 'Detalhes Da Comanda',
+        "sale": sale,
+        "products": products,
+        "header_color": header_color,
+        "section_name": "Detalhes Da Comanda",
+        "client_name": client_name,
     }
 
-    # If HTMX asks for a fragment, render the fragment with full context
-    if request.headers.get('HX-Request') == 'true':
-        return render(request, 'partials/sale_detail_fragment.html', context)
+    # Se a requisição for HTMX, renderiza apenas o fragmento
+    if request.headers.get("HX-Request") == "true":
+        return render(request, "partials/sale_detail_fragment.html", context)
 
-    return render(request, 'sale_detail.html', context)
+    return render(request, "sale_detail.html", context)
 
 
 @require_POST
@@ -91,12 +110,18 @@ def add_item(request, sale_id):
         return HttpResponseBadRequest('Estoque insuficiente.')
 
     with transaction.atomic():
-        SaleItem.objects.create(
-            sale=sale,
-            product=product,
-            quantity=quantity,
-            price=product.sale_price,
-        )
+        sale_item = sale.items.filter(product=product).first()
+        if sale_item:
+            sale_item.quantity += quantity
+            sale_item.save()
+        else:
+
+            SaleItem.objects.create(
+                sale=sale,
+                product=product,
+                quantity=quantity,
+                price=product.sale_price,
+            )
         # reduce stock safe-guard
         product.quantity = max(product.quantity - quantity, 0)
         product.save(update_fields=['quantity'])
@@ -146,16 +171,52 @@ def pay_sale(request, sale_id):
 
     sale.refresh_from_db()
     # return payment fragment (or detail fragment if you prefer)
-    return render(request, 'partials/sale_payment_fragment.html', {'sale': sale, 'close_modal': True})
+    return render(
+        request,
+        'partials/sale_payment_fragment.html',
+        {'sale': sale, 'close_modal': True},
+    )
+
+
+def pix_qr(request, sale_id):
+    """Render a simple PIX QR screen for the given sale.
+
+    This view builds a small payload (you can replace it with a real
+    PIX payload) and uses an external QR image generator to display
+    the QR code. The client-side JS opens this view in a new window
+    when the user selects PIX as the payment method.
+    """
+    sale = get_object_or_404(Sale, pk=sale_id)
+    amount = (request.GET.get('amount') or '').strip()
+
+    if amount:
+        payload = f'PIX|sale:{sale.pk}|amount:{amount}'
+    else:
+        payload = f'PIX|sale:{sale.pk}'
+
+    context = {
+        'sale': sale,
+        'payload': payload,
+        'amount': amount,
+    }
+    return render(request, 'partials/pix_qr.html', context)
 
 
 def search_products(request, sale_id):
     query = (request.GET.get('search') or '').strip()
     sale = get_object_or_404(Sale, pk=sale_id)
     if query:
-        products = Product.objects.filter(Q(name__icontains=query) & Q(quantity__gt=0)).order_by('name')[:20]
-    else:
-        # default listing to populate modal when empty search
-        products = Product.objects.filter(quantity__gt=0).order_by('name')[:20]
+        products = Product.objects.filter(
+            Q(name__icontains=query) & Q(quantity__gt=0) & Q(is_active=True)
+        ).order_by('name')[:20]
 
-    return render(request, 'partials/search_results_fragment.html', {'products': products, 'sale': sale})
+    else:
+        products = Product.objects.filter(
+            quantity__gt=0, is_active=True
+        ).order_by('name')[:20]
+
+    return render(
+        request,
+        'partials/search_results_fragment.html',
+        {'products': products, 'sale': sale},
+    )
