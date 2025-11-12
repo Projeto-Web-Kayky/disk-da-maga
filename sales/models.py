@@ -20,7 +20,7 @@ class Sale(models.Model):
         on_delete=models.SET_NULL,
         related_name='sales',
     )
-    client_name = models.CharField(max_length=255, blank=True, default='Avulso')
+    client_name = models.CharField(max_length=255, blank=True)
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN
     )
@@ -37,15 +37,13 @@ class Sale(models.Model):
 
     @property
     def total(self):
-        total_sum = self.items.aggregate(
-            total=Sum(F('price') * F('quantity'))
-        )
-        return total_sum['total'] or Decimal('0.00')
+        agg = self.items.aggregate(total=Sum(F('price') * F('quantity')))
+        return agg['total'] or Decimal('0.00')
 
     @property
     def paid_amount(self):
-        total_sum = self.payments.aggregate(total=Sum('amount'))
-        return total_sum['total'] or Decimal('0.00')
+        agg = self.payments.aggregate(total=Sum('amount'))
+        return agg['total'] or Decimal('0.00')
 
     @property
     def balance(self):
@@ -66,9 +64,7 @@ class Sale(models.Model):
         )
         paid = Sale.objects.filter(
             client=self.client, status=self.STATUS_OPEN
-        ).aggregate(paid=Sum('payments__amount'))['paid'] or Decimal(
-            '0.00'
-        )
+        ).aggregate(paid=Sum('payments__amount'))['paid'] or Decimal('0.00')
         self.client.client_debts = (debt - paid).quantize(Decimal('0.01'))
         self.client.save(update_fields=['client_debts'])
 
@@ -120,12 +116,6 @@ class Sale(models.Model):
                 sale_locked.finalize_and_reserve_stock()
             else:
                 sale_locked.update_client_debt_cache()
-
-    def save(self, *args, **kwargs):
-        # Se não houver cliente e o campo estiver vazio, define como "Avulso"
-        if not self.client and not self.client_name:
-            self.client_name = 'Avulso'
-        super().save(*args, **kwargs)
 
 
 class SaleItem(models.Model):
