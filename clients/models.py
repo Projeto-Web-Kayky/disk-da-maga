@@ -3,7 +3,7 @@ from django.db import models
 
 class Client(models.Model):
     client_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, blank=False, verbose_name='Nome', default='Avulso')
+    name = models.CharField(max_length=255, blank=False, verbose_name='Nome')
     nickname = models.CharField(
         max_length=100, blank=True, verbose_name='Apelido'
     )

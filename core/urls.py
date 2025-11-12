@@ -9,7 +9,7 @@ from products.views import (
     ProductListView,
     ProductCreateView,
     ProductUpdateView,
-    delete_product,
+    ProductDeleteView,
     search_products,
 )
 
@@ -31,9 +31,10 @@ urlpatterns = [
     ),
     path(
         'products/delete/<int:pk>/',
-        delete_product,
+        ProductDeleteView.as_view(),
         name='product_delete',
     ),
     path('clients/', client_list, name='client_list'),
     path('sales/', include('sales.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# rollback
