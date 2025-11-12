@@ -37,13 +37,15 @@ class Sale(models.Model):
 
     @property
     def total(self):
-        agg = self.items.aggregate(total=Sum(F('price') * F('quantity')))
-        return agg['total'] or Decimal('0.00')
+        total_sum = self.items.aggregate(
+            total=Sum(F('price') * F('quantity'))
+        )
+        return total_sum['total'] or Decimal('0.00')
 
     @property
     def paid_amount(self):
-        agg = self.payments.aggregate(total=Sum('amount'))
-        return agg['total'] or Decimal('0.00')
+        total_sum = self.payments.aggregate(total=Sum('amount'))
+        return total_sum['total'] or Decimal('0.00')
 
     @property
     def balance(self):
@@ -64,7 +66,9 @@ class Sale(models.Model):
         )
         paid = Sale.objects.filter(
             client=self.client, status=self.STATUS_OPEN
-        ).aggregate(paid=Sum('payments__amount'))['paid'] or Decimal('0.00')
+        ).aggregate(paid=Sum('payments__amount'))['paid'] or Decimal(
+            '0.00'
+        )
         self.client.client_debts = (debt - paid).quantize(Decimal('0.01'))
         self.client.save(update_fields=['client_debts'])
 
