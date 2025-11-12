@@ -46,7 +46,7 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
 def delete_product(request, pk):
     product = get_object_or_404(Product, pk=pk, is_active=True)
 
-    if request.method == "POST":
+    if request.method == 'POST':
         # Soft delete
         product.is_active = False
         product.save()

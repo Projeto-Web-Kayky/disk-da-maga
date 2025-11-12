@@ -37,4 +37,3 @@ urlpatterns = [
     path('clients/', client_list, name='client_list'),
     path('sales/', include('sales.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-# rollback

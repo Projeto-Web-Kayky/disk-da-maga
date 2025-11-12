@@ -11,7 +11,11 @@ from clients.models import Client
 
 def sale_list(request):
     sales = Sale.objects.all().order_by('-created_at')
-    return render(request, 'sale_list.html', {'sales': sales, 'section_name': 'Lista de Vendas'})
+    return render(
+        request,
+        'sale_list.html',
+        {'sales': sales, 'section_name': 'Lista de Vendas'},
+    )
 
 
 def sale_create(request):
@@ -27,9 +31,18 @@ def sale_create(request):
                 client = None
 
         sale = Sale.objects.create(client=client, client_name=client_name)
-        return render(request, 'partials/sale_created_feedback.html', {'sale': sale})
+        return render(
+            request, 'partials/sale_created_feedback.html', {'sale': sale}
+        )
 
-    return render(request, 'sale_create.html', {'clients': clients, 'section_name': 'Cadastrar Nova Venda',})
+    return render(
+        request,
+        'sale_create.html',
+        {
+            'clients': clients,
+            'section_name': 'Cadastrar Nova Venda',
+        },
+    )
 
 
 def _get_header_color_for_sale(sale):
@@ -38,7 +51,9 @@ def _get_header_color_for_sale(sale):
         'finalized': 'border-green-600 bg-green-100 text-green-900',
         'cancelled': 'border-gray-500 bg-gray-200 text-gray-700',
     }
-    return color_map.get(sale.status, 'border-slate-600 bg-slate-100 text-slate-900')
+    return color_map.get(
+        sale.status, 'border-slate-600 bg-slate-100 text-slate-900'
+    )
 
 
 def sale_detail(request, sale_id):
@@ -152,7 +167,11 @@ def pay_sale(request, sale_id):
 
     sale.refresh_from_db()
     # return payment fragment (or detail fragment if you prefer)
-    return render(request, 'partials/sale_payment_fragment.html', {'sale': sale, 'close_modal': True})
+    return render(
+        request,
+        'partials/sale_payment_fragment.html',
+        {'sale': sale, 'close_modal': True},
+    )
 
 
 def pix_qr(request, sale_id):
@@ -183,10 +202,17 @@ def search_products(request, sale_id):
     query = (request.GET.get('search') or '').strip()
     sale = get_object_or_404(Sale, pk=sale_id)
     if query:
-        products = Product.objects.filter(Q(name__icontains=query) & Q(quantity__gt=0) & Q(is_active=True)).order_by('name')[:20]
+        products = Product.objects.filter(
+            Q(name__icontains=query) & Q(quantity__gt=0) & Q(is_active=True)
+        ).order_by('name')[:20]
 
     else:
-        products = Product.objects.filter(quantity__gt=0, is_active=True).order_by('name')[:20]
+        products = Product.objects.filter(
+            quantity__gt=0, is_active=True
+        ).order_by('name')[:20]
 
-
-    return render(request, 'partials/search_results_fragment.html', {'products': products, 'sale': sale})
+    return render(
+        request,
+        'partials/search_results_fragment.html',
+        {'products': products, 'sale': sale},
+    )
