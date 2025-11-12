@@ -59,21 +59,25 @@ def _get_header_color_for_sale(sale):
 def sale_detail(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
     header_color = _get_header_color_for_sale(sale)
-    # always provide products so modal includes have data
     products = Product.objects.filter(quantity__gt=0).order_by('name')
 
+    client_name = (
+        sale.client.name if sale.client else (sale.client_name or "Avulso")
+    )
+
     context = {
-        'sale': sale,
-        'products': products,
-        'header_color': header_color,
-        'section_name': 'Detalhes Da Comanda',
+        "sale": sale,
+        "products": products,
+        "header_color": header_color,
+        "section_name": "Detalhes Da Comanda",
+        "client_name": client_name,
     }
 
-    # If HTMX asks for a fragment, render the fragment with full context
-    if request.headers.get('HX-Request') == 'true':
-        return render(request, 'partials/sale_detail_fragment.html', context)
+    # Se a requisição for HTMX, renderiza apenas o fragmento
+    if request.headers.get("HX-Request") == "true":
+        return render(request, "partials/sale_detail_fragment.html", context)
 
-    return render(request, 'sale_detail.html', context)
+    return render(request, "sale_detail.html", context)
 
 
 @require_POST

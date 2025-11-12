@@ -20,7 +20,7 @@ class Sale(models.Model):
         on_delete=models.SET_NULL,
         related_name='sales',
     )
-    client_name = models.CharField(max_length=255, blank=True)
+    client_name = models.CharField(max_length=255, blank=True, default='Avulso')
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN
     )
@@ -120,6 +120,12 @@ class Sale(models.Model):
                 sale_locked.finalize_and_reserve_stock()
             else:
                 sale_locked.update_client_debt_cache()
+
+    def save(self, *args, **kwargs):
+        # Se não houver cliente e o campo estiver vazio, define como "Avulso"
+        if not self.client and not self.client_name:
+            self.client_name = 'Avulso'
+        super().save(*args, **kwargs)
 
 
 class SaleItem(models.Model):

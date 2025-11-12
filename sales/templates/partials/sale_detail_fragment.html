@@ -4,17 +4,20 @@
             <div class="card bg-red-800 text-white shadow-lg rounded-lg p-4">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h2 class="text-2xl font-bold">Comanda #{{ sale.id }}</h2>
-                        <p class="mt-1 text-sm">
+                        <h2 class="text-xl font-semibold">Comanda #{{ sale.id }}</h2>
+
+                        <p class="text-sm opacity-90">
                             Cliente:
-                            {% if sale.client %}
-                            {{ sale.client.name }}
-                            {% else %}
-                            {{ sale.client_name }}
-                            {% endif %}
+                            {{ sale.client.name|default:sale.client_name|default:"Avulso" }}
                         </p>
-                        <p class="mt-1 text-sm">Status: {{ sale.status|title }}</p>
+
+                        <p class="text-sm opacity-90">
+                            Total: R$ {{ sale.total }} |
+                            Pago: R$ {{ sale.paid_amount }} |
+                            Saldo: R$ {{ sale.balance }}
+                        </p>
                     </div>
+
                 </div>
 
                 <hr class="my-3 border-red-600/50">
