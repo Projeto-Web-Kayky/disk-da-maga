@@ -1,0 +1,59 @@
+<div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-6 text-center">
+  <!-- Back button -->
+  <div class="flex justify-start mb-4">
+    <button type="button" data-action="close" class="text-gray-600 hover:text-gray-900">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </button>
+  </div>
+
+  <!-- Client Profile Card -->
+  <div class="bg-white rounded-xl shadow-md p-6 text-center">
+    <!-- Avatar -->
+    <div class="flex justify-center mb-4">
+      {% if client.photo %}
+      <img src="{{ client.photo.url }}" alt="{{ client.name }}" class="w-24 h-24 rounded-full object-cover bg-purple-200">
+      {% else %}
+      <div class="w-24 h-24 rounded-full bg-purple-200 flex items-center justify-center">
+        <span class="material-symbols-outlined text-4xl text-purple-600">person</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Client Name and Nickname -->
+    <h2 class="text-xl font-bold text-gray-900">{{ client.name }}</h2>
+    <p class="text-sm text-gray-600">({{ client.nickname | default:"Sem apelido" }})</p>
+
+    <!-- Phone -->
+    <p class="text-sm text-gray-700 mt-2">{{ client.phone_number }}</p>
+
+    <!-- Debt Info -->
+    <div class="bg-red-100 border border-red-300 rounded-lg p-3 mt-4">
+      <p class="text-sm text-gray-700">{{ client.name }} está devendo</p>
+      <p class="text-2xl font-bold text-red-600">R$ {{ client.client_debts|floatformat:2 }}</p>
+    </div>
+
+    <!-- Additional Info -->
+    <div class="mt-6 space-y-3 text-left border-t pt-4">
+      <div>
+        <p class="text-xs text-gray-500">Data de Criação</p>
+        <p class="text-sm font-semibold text-gray-900">{{ client.created_at|date:"d/m/Y H:i" }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500">Última Atualização</p>
+        <p class="text-sm font-semibold text-gray-900">{{ client.updated_at|date:"d/m/Y H:i" }}</p>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-3 mt-6">
+      <form hx-post="{% url 'client_delete' client.client_id %}" hx-confirm="Confirma exclusão deste cliente?" hx-swap="none" class="flex-1">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-error w-full text-white">Deletar</button>
+      </form>
+
+      <form hx-post="#" class="flex-1">
+        <button type="button" class="btn btn-success w-full text-white">Cobrar</button>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div x-data="{ open: false }">
+<div x-data="{ open: false, selectedClientId: null, detailOpen: false }">
 
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">Clientes</h2>
@@ -30,12 +30,15 @@
             </thead>
             <tbody>
                 {% for client in clients %}
-                <tr class="border-b hover:bg-gray-50">
+                <tr id="client-{{ client.client_id }}" class="border-b hover:bg-gray-50 cursor-pointer transition-colors"
+                    @click="selectedClientId = {{ client.client_id }}; loadClientDetail({{ client.client_id }}); detailOpen = true">
                     <td class="px-4 py-2">
                         {% if client.photo %}
                         <img src="{{ client.photo.url }}" alt="Foto" class="w-12 h-12 rounded-full object-cover">
                         {% else %}
-                        -
+                        <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                          <span class="material-symbols-outlined text-gray-600">person</span>
+                        </div>
                         {% endif %}
                     </td>
                     <td class="px-4 py-2 font-bold">{{ client.name }}</td>
@@ -52,6 +55,14 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Modal de Detalhe do Cliente (dinâmico) -->
+    <div x-show="detailOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+         @click.self="detailOpen = false">
+        <div id="client-detail-container" class="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <!-- Content will be loaded via HTMX -->
+        </div>
     </div>
 
     <!-- Modal de cadastro -->
@@ -80,5 +91,51 @@
     </div>
 
 </div>
+
+<script>
+    function loadClientDetail(clientId) {
+        const container = document.getElementById('client-detail-container');
+        const parent = document.querySelector('[x-data]');
+
+        fetch(`/clients/${clientId}/`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(html => {
+                container.innerHTML = html;
+                // Wire up close button after loading
+                const closeBtn = container.querySelector('[data-action="close"]');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        if (parent && parent.__x && parent.__x.$data) parent.__x.$data.detailOpen = false;
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Failed to load client detail', err);
+                container.innerHTML = '<div class="p-4 text-red-600">Erro ao carregar detalhes do cliente.</div>';
+            });
+    }
+</script>
+
+<script>
+    // Listen for server-sent HTMX trigger when a client is deleted
+    document.body.addEventListener('clientDeleted', function(evt) {
+        try {
+            const clientId = evt.detail.clientId;
+            const row = document.getElementById('client-' + clientId);
+            if (row) row.remove();
+
+            // Close the modal (Alpine state)
+            const parent = document.querySelector('[x-data]');
+            if (parent && parent.__x && parent.__x.$data) parent.__x.$data.detailOpen = false;
+        } catch (e) {
+            console.error('Error handling clientDeleted event', e);
+        }
+    });
+</script>
 
 {% endblock %}

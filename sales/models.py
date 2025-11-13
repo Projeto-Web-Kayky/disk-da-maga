@@ -112,6 +112,11 @@ class Sale(models.Model):
             Payment.objects.create(
                 sale=sale_locked, amount=amount, method=method, note=note
             )
+            
+            if method == 'fiado' and sale_locked.client:
+                sale_locked.client.client_debts += amount
+                sale_locked.client.save(update_fields=['client_debts'])
+            
             if sale_locked.paid_amount >= sale_locked.total:
                 sale_locked.finalize_and_reserve_stock()
             else:
