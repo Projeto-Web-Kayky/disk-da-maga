@@ -1,59 +1,84 @@
-<div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-6 text-center">
-  <!-- Back button -->
-  <div class="flex justify-start mb-4">
-    <button type="button" data-action="close" class="text-gray-600 hover:text-gray-900">
-      <span class="material-symbols-outlined">arrow_back</span>
-    </button>
-  </div>
+<!-- MODAL DETALHES DO CLIENTE -->
+<div x-data @close-detail.window="detailOpen = false">
+  <div x-data="{ detailOpen: true }" x-show="detailOpen" x-transition.opacity
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    @click.self="$dispatch('close-detail')">
 
-  <!-- Client Profile Card -->
-  <div class="bg-white rounded-xl shadow-md p-6 text-center">
-    <!-- Avatar -->
-    <div class="flex justify-center mb-4">
-      {% if client.photo %}
-      <img src="{{ client.photo.url }}" alt="{{ client.name }}" class="w-24 h-24 rounded-full object-cover bg-purple-200">
-      {% else %}
-      <div class="w-24 h-24 rounded-full bg-purple-200 flex items-center justify-center">
-        <span class="material-symbols-outlined text-4xl text-purple-600">person</span>
+    <!-- Card -->
+    <div class="w-full max-w-md bg-white rounded-xl shadow-xl p-6 mx-4">
+
+      <!-- Botão Voltar -->
+      <div class="flex justify-start mb-4">
+        <button type="button" @click="$dispatch('close-detail')" class="text-gray-500 hover:text-gray-800 transition">
+          <span class="material-symbols-outlined text-2xl">arrow_back</span>
+        </button>
       </div>
-      {% endif %}
-    </div>
 
-    <!-- Client Name and Nickname -->
-    <h2 class="text-xl font-bold text-gray-900">{{ client.name }}</h2>
-    <p class="text-sm text-gray-600">({{ client.nickname | default:"Sem apelido" }})</p>
+      <!-- Conteúdo Principal -->
+      <div class="text-center">
 
-    <!-- Phone -->
-    <p class="text-sm text-gray-700 mt-2">{{ client.phone_number }}</p>
+        <!-- Avatar -->
+        <div class="flex justify-center mb-4">
+          {% if client.photo %}
+          <img src="{{ client.photo.url }}" alt="{{ client.name }}"
+            class="w-24 h-24 rounded-full object-cover ring-2 ring-green-700 shadow-sm">
+          {% else %}
+          <div
+            class="w-24 h-24 rounded-full bg-purple-100 ring-2 ring-green-700 flex items-center justify-center shadow-sm">
+            <span class="material-symbols-outlined text-4xl text-green-700">person</span>
+          </div>
+          {% endif %}
+        </div>
 
-    <!-- Debt Info -->
-    <div class="bg-red-100 border border-red-300 rounded-lg p-3 mt-4">
-      <p class="text-sm text-gray-700">{{ client.name }} está devendo</p>
-      <p class="text-2xl font-bold text-red-600">R$ {{ client.client_debts|floatformat:2 }}</p>
-    </div>
+        <!-- Nome e Apelido -->
+        <h2 class="text-xl font-semibold text-gray-900 leading-tight truncate">{{ client.name }}</h2>
+        <p class="text-xs text-gray-500 mt-1 truncate">({{ client.nickname|default:"Sem apelido" }})</p>
 
-    <!-- Additional Info -->
-    <div class="mt-6 space-y-3 text-left border-t pt-4">
-      <div>
-        <p class="text-xs text-gray-500">Data de Criação</p>
-        <p class="text-sm font-semibold text-gray-900">{{ client.created_at|date:"d/m/Y H:i" }}</p>
+        <!-- Telefone -->
+        <p class="text-sm text-gray-700 mt-2 truncate">{{ client.phone_number }}</p>
+
+        <!-- Dívida -->
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-5 shadow-sm">
+          <p class="text-xs text-gray-700 truncate">{{ client.name }} está devendo</p>
+          <p class="text-2xl font-bold text-red-800">
+            R$ {{ client.client_debts|floatformat:2 }}
+          </p>
+        </div>
+
+        <!-- Informações adicionais -->
+        <div class="mt-5 space-y-3 text-left border-t pt-3">
+          <div>
+            <p class="text-[10px] text-gray-500 uppercase tracking-wide">Data de Criação</p>
+            <p class="text-sm font-medium text-gray-800">{{ client.created_at|date:"d/m/Y H:i" }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-gray-500 uppercase tracking-wide">Última Atualização</p>
+            <p class="text-sm font-medium text-gray-800">{{ client.updated_at|date:"d/m/Y H:i" }}</p>
+          </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex gap-3 mt-5">
+
+          <!-- Deletar -->
+          <form hx-post="{% url 'client_delete' client.client_id %}" hx-confirm="Confirma exclusão deste cliente?"
+            hx-swap="none" @htmx:afterOnLoad.window="$dispatch('close-detail')" class="flex-1">
+            {% csrf_token %}
+            <button type="submit"
+              class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition">
+              Deletar
+            </button>
+          </form>
+
+          <!-- Cobrar -->
+          <button type="button"
+            class="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition">
+            Cobrar
+          </button>
+
+        </div>
+
       </div>
-      <div>
-        <p class="text-xs text-gray-500">Última Atualização</p>
-        <p class="text-sm font-semibold text-gray-900">{{ client.updated_at|date:"d/m/Y H:i" }}</p>
-      </div>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="flex gap-3 mt-6">
-      <form hx-post="{% url 'client_delete' client.client_id %}" hx-confirm="Confirma exclusão deste cliente?" hx-swap="none" class="flex-1">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-error w-full text-white">Deletar</button>
-      </form>
-
-      <form hx-post="#" class="flex-1">
-        <button type="button" class="btn btn-success w-full text-white">Cobrar</button>
-      </form>
     </div>
   </div>
 </div>
