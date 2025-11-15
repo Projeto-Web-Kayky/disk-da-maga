@@ -1,35 +1,24 @@
 <dialog id="add-item-modal" class="modal">
-    <div class="modal-box w-11/12 max-w-lg border-l-8 border-amber-500 bg-base-200 text-base-content">
-        <h3 class="font-extrabold text-lg mb-4 text-amber-500"><span class="material-symbols-outlined">
-                shopping_cart
-            </span> Adicionar Item</h3>
+  <div class="modal-box w-11/12 max-w-lg border-blue-500 bg-base-200 text-base-content">
+    <h3 class="font-extrabold text-lg mb-4 text-blue-700 flex items-center">
+      <span class="material-symbols-outlined">shopping_cart</span> Adicionar Item
+    </h3>
 
-        <div class="form-control mb-4">
-            <label class="label">
-                <span class="label-text font-semibold text-sm">Buscar Produto</span>
-            </label>
-            <input type="text" name="search" placeholder="Digite o nome do produto..."
-                class="input input-bordered w-full" hx-get="{% url 'search_products' sale.id %}"
-                hx-trigger="keyup changed delay:300ms" hx-target="#product-search-results" hx-swap="innerHTML"
-                autocomplete="off">
-        </div>
+    <div class="form-control mb-4">
+      <label class="label"><span class="label-text font-semibold text-sm">Buscar Produto</span></label>
+      <input type="text" name="search" placeholder="Digite o nome do produto..." class="input input-bordered w-full"
+        hx-get="{% url 'search_products' sale.id %}" hx-trigger="keyup changed delay:300ms"
+        hx-target="#product-search-results" hx-swap="innerHTML" autocomplete="off">
+    </div>
 
-        <!-- Container começa vazio -->
         <div id="product-search-results" class="space-y-2 max-h-64 overflow-y-auto">
-            <p class="text-sm text-gray-500 italic text-center py-2">
-                Digite para buscar produtos ativos...
-            </p>
+            {% include 'partials/search_results_fragment.html' %}
         </div>
 
         <div class="flex justify-end gap-2 mt-6">
-            <button type="button" class="btn btn-outline btn-error btn-sm"
-                onclick="document.getElementById('add-item-modal').close()">
-                Cancelar
-            </button>
+            <button type="button" class="btn btn-outline btn-sm"
+                onclick="document.getElementById('add-item-modal').close()">Cancelar</button>
         </div>
     </div>
-
-    <form method="dialog" class="modal-backdrop">
-        <button>Fechar</button>
-    </form>
+    <form method="dialog" class="modal-backdrop"><button>Fechar</button></form>
 </dialog>

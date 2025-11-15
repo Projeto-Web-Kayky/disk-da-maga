@@ -17,33 +17,109 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Sale',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('client_name', models.CharField(blank=True, max_length=255)),
-                ('status', models.CharField(choices=[('open', 'Aberta'), ('finalized', 'Finalizada'), ('cancelled', 'Cancelada')], default='open', max_length=20)),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('open', 'Aberta'),
+                            ('finalized', 'Finalizada'),
+                            ('cancelled', 'Cancelada'),
+                        ],
+                        default='open',
+                        max_length=20,
+                    ),
+                ),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('client', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='sales', to='clients.client')),
+                (
+                    'client',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='sales',
+                        to='clients.client',
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
             name='Payment',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=12)),
-                ('method', models.CharField(blank=True, max_length=50, null=True)),
-                ('note', models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'amount',
+                    models.DecimalField(decimal_places=2, max_digits=12),
+                ),
+                (
+                    'method',
+                    models.CharField(blank=True, max_length=50, null=True),
+                ),
+                (
+                    'note',
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('sale', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='payments', to='sales.sale')),
+                (
+                    'sale',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='payments',
+                        to='sales.sale',
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
             name='SaleItem',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('quantity', models.PositiveIntegerField(default=1)),
-                ('unit_price', models.DecimalField(decimal_places=2, max_digits=12)),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='products.product')),
-                ('sale', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='sales.sale')),
+                (
+                    'unit_price',
+                    models.DecimalField(decimal_places=2, max_digits=12),
+                ),
+                (
+                    'product',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to='products.product',
+                    ),
+                ),
+                (
+                    'sale',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='items',
+                        to='sales.sale',
+                    ),
+                ),
             ],
         ),
     ]

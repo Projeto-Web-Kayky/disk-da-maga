@@ -1,16 +1,15 @@
-from sales.views import SaleCreateView
 from . import views
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts.views import login_view, logout_view
-from clients.views import client_list
+from clients.views import client_list, client_detail, client_delete
 from products.views import (
     ProductListView,
     ProductCreateView,
     ProductUpdateView,
-    ProductDeleteView,
+    delete_product,
     search_products,
 )
 
@@ -32,10 +31,12 @@ urlpatterns = [
     ),
     path(
         'products/delete/<int:pk>/',
-        ProductDeleteView.as_view(),
+        delete_product,
         name='product_delete',
     ),
     path('clients/', client_list, name='client_list'),
+    path('clients/<int:client_id>/', client_detail, name='client_detail'),
+    path('clients/<int:client_id>/delete/', client_delete, name='client_delete'),
     path('sales/', include('sales.urls')),
     path('dashboard/', include('dashboard.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

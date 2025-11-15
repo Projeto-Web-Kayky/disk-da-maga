@@ -13,7 +13,6 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -91,7 +90,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

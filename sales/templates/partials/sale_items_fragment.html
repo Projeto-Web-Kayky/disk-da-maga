@@ -14,8 +14,7 @@
             <form hx-post="{% url 'remove_item' sale.id item.id %}" hx-target="#sale-items" hx-swap="outerHTML"
                 method="POST" class="mt-2 inline">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-ghost btn-xs text-error gap-[0px]hover:bg-error/10"><span
-                        class="material-symbols-outlined">delete</span>Excluir</button>
+                <button type="submit" class="btn btn-ghost btn-xs text-error hover:bg-error/10">🗑️ Excluir</button>
             </form>
             {% endif %}
         </div>
@@ -27,6 +26,6 @@
 
     <div class="flex justify-between border-t border-base-300 pt-3 mt-2">
         <span class="font-semibold text-base-content/70">Total:</span>
-        <span class="font-bold text-success text-lg">R$ {{ sale.total }}</span>
+        <span class="font-bold text-success text-lg badge badge-success text-white p-3">R$ {{ sale.total }}</span>
     </div>
 </div>

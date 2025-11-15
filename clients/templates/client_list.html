@@ -1,19 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div x-data="{ open: false }">
+<div x-data="{ open: false, detailOpen: false }">
 
+    <!-- Cabeçalho -->
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">Clientes</h2>
-
-        <div class="fab flex justify-center items-center aspect-square" @click="open = true">
-            <button class="text-white btn-md btn-circle bg-red-800 flex justify-center items-center aspect-square absolute top-[80%] right-[3%]">
-                <span class="material-symbols-outlined">
-                    add_2
-                </span>
-            </button>
-        </div>
-
+        <button class="btn-md btn-circle bg-red-800 text-white flex justify-center items-center" @click="open = true">
+            <span class="material-symbols-outlined">add_2</span>
+        </button>
     </div>
 
     <!-- Tabela de clientes -->
@@ -30,12 +25,17 @@
             </thead>
             <tbody>
                 {% for client in clients %}
-                <tr class="border-b hover:bg-gray-50">
+                <tr id="client-{{ client.client_id }}"
+                    class="border-b hover:bg-gray-50 cursor-pointer transition-colors"
+                    hx-get="/clients/{{ client.client_id }}/" hx-target="#client-detail-container" hx-trigger="click"
+                    hx-indicator="#loading" @click="detailOpen = true">
                     <td class="px-4 py-2">
                         {% if client.photo %}
-                        <img src="{{ client.photo.url }}" alt="Foto" class="w-12 h-12 rounded-full object-cover">
+                        <img src="{{ client.photo.url }}" class="w-12 h-12 rounded-full object-cover">
                         {% else %}
-                        -
+                        <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-gray-600">person</span>
+                        </div>
                         {% endif %}
                     </td>
                     <td class="px-4 py-2 font-bold">{{ client.name }}</td>
@@ -45,28 +45,40 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="px-4 py-2 text-center text-gray-500">
-                        Nenhum cliente cadastrado.
-                    </td>
+                    <td colspan="5" class="px-4 py-2 text-center text-gray-500">Nenhum cliente cadastrado.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- Modal de cadastro -->
-    <div x-show="open" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <!-- MODAL DETALHES (HTMX + Alpine) -->
+    <div x-show="detailOpen" x-transition.opacity
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="detailOpen = false">
+
+        <div id="client-detail-container" class="rounded-lg shadow-lg w-full max-w-sm max-h-[90vh] overflow-y-auto p-0">
+            <!-- HTMX carregará o modal compacto do cliente aqui -->
+        </div>
+    </div>
+
+    <!-- MODAL NOVO CLIENTE -->
+    <div x-show="open" x-transition.opacity
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="open = false">
+
         <div class="bg-white rounded-lg shadow-lg w-full max-w-md">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
+
                 <div class="flex justify-between items-center border-b px-4 py-2">
                     <h5 class="text-lg font-semibold">Novo Cliente</h5>
-                    <button type="button" @click="open = false"
-                        class="btn btn-ghost hover:text-gray-700">&times;</button>
+                    <button type="button" @click="open = false" class="btn btn-ghost">&times;</button>
                 </div>
+
                 <div class="p-4 space-y-4">
                     {{ form.as_p }}
                 </div>
+
                 <div class="flex justify-end gap-2 border-t px-4 py-2">
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
                         Salvar
@@ -79,6 +91,11 @@
         </div>
     </div>
 
+</div>
+
+<!-- Indicador HTMX -->
+<div id="loading" class="fixed top-4 right-4 hidden">
+    <div class="animate-spin border-4 border-gray-300 border-t-blue-600 rounded-full w-8 h-8"></div>
 </div>
 
 {% endblock %}

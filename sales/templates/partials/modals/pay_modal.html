@@ -1,28 +1,85 @@
 <dialog id="pay-modal" class="modal">
-    <div class="modal-box w-11/12 max-w-md border-l-8 border-green-500 bg-base-200 text-base-content">
-        <h3 class="font-extrabold text-lg mb-4 text-green-700"><span class="material-symbols-outlined leading-none">
-                money_bag
-            </span> Registrar Pagamento</h3>
+  <div class="modal-box w-11/12 max-w-md border-green-500 bg-base-200 text-base-content">
+    <h3 class="font-extrabold text-lg mb-4 text-green-700 flex items-center">
+      <span class="material-symbols-outlined">attach_money</span>
+      Registrar Pagamento
+    </h3>
 
-        <form hx-post="{pay_sale' sale.id %}" hx-target="#sale-items" hx-swap="outerHTML"
-            hx-on="htmx:afterRequest: document.getElementById('pay-modal') && document.getElementById('pay-modal').close()"
-            method="POST" class="flex flex-col gap-3">
-            {% csrf_token %}
-            <input type="number" name="amount" step="0.01" required placeholder="Valor a pagar"
-                class="input input-bordered">
-            <select name="method" class="select select-bordered">
-                <option value="pix">PIX</option>
-                <option value="cash">Dinheiro</option>
-                <option value="card">Cartão</option>
-            </select>
-            <input type="text" name="note" placeholder="Observação (opcional)" class="input input-bordered">
+    <form hx-post="{% url 'pay_sale' sale.id %}" hx-target="#sale-items" hx-swap="outerHTML"
+      hx-on="htmx:afterRequest: document.getElementById('pay-modal') && document.getElementById('pay-modal').close()"
+      method="POST" class="flex flex-col gap-3" id="pay-form">
+      {% csrf_token %}
+      <input type="number" name="amount" step="0.01" required placeholder="Valor a pagar" class="input input-bordered">
+      <select name="method" class="select select-bordered">
+        <option value="pix">PIX</option>
+        <option value="cash">Dinheiro</option>
+        <option value="card">Cartão</option>
+        <option value="fiado">Conta do Cliente</option>
+      </select>
+      <input type="text" name="note" placeholder="Observação (opcional)" class="input input-bordered">
 
-            <div class="flex justify-end gap-2 mt-2">
-                <button type="button" class="btn btn-outline btn-error"
-                    onclick="document.getElementById('pay-modal').close()">Cancelar</button>
-                <button type="submit" class="btn btn-success text-white">Registrar</button>
-            </div>
-        </form>
-    </div>
-    <form method="dialog" class="modal-backdrop"><button>Fechar</button></form>
+      <div class="flex justify-end gap-2 mt-2">
+        <button type="button" class="btn btn-outline btn-error"
+          onclick="document.getElementById('pay-modal').close()">Cancelar</button>
+        <button type="submit" class="btn btn-success text-white">Registrar</button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>Fechar</button></form>
 </dialog>
+
+<script>
+  (function () {
+    const form = document.getElementById('pay-form');
+    if (!form) return;
+
+    const methodSelect = form.querySelector('select[name="method"]');
+    const amountInput = form.querySelector('input[name="amount"]');
+
+    let pixDialog = document.getElementById('pix-preview');
+    if (!pixDialog) {
+      pixDialog = document.createElement('dialog');
+      pixDialog.id = 'pix-preview';
+      pixDialog.className = 'modal';
+      document.body.appendChild(pixDialog);
+    }
+
+    form.addEventListener('submit', async function (e) {
+      if (form.dataset.skipQr === '1') {
+        delete form.dataset.skipQr;
+        return;
+      }
+
+      const method = (methodSelect && methodSelect.value) || '';
+      if (method !== 'pix') {
+        return;
+      }
+
+      e.preventDefault();
+      try {
+        const amount = (amountInput && amountInput.value) ? amountInput.value : '';
+        const url = new URL("{% url 'sale_pix_qr' sale.id %}", window.location.origin);
+        if (amount) url.searchParams.set('amount', amount);
+
+        const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!res.ok) throw new Error('Falha ao carregar QR');
+        const html = await res.text();
+
+        pixDialog.innerHTML = html;
+
+        pixDialog.querySelectorAll('[data-action="close"]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            pixDialog.close();
+            form.dataset.skipQr = '1';
+            form.requestSubmit();
+          });
+        });
+
+        if (typeof pixDialog.showModal === 'function') pixDialog.showModal();
+      } catch (err) {
+        console.error(err);
+        alert('Não foi possível carregar o QR. Tente novamente.');
+      }
+    });
+  })();
+</script>

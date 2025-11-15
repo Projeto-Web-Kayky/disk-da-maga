@@ -2,7 +2,7 @@
 {% block title %}Nova Venda{% endblock %}
 {% block content %}
 <div class="flex justify-center mt-10">
-    <button class="btn btn-accent" onclick="document.getElementById('sale-create-modal').showModal()">➕ Nova
+    <button class="btn border-none bg-red-800 text-white hover:bg-red-900" onclick="document.getElementById('sale-create-modal').showModal()">+ Nova
         Venda</button>
 </div>
 
@@ -32,7 +32,7 @@
             <div class="flex justify-end gap-2 mt-4">
                 <button type="button" class="btn"
                     onclick="document.getElementById('sale-create-modal').close()">Cancelar</button>
-                <button type="submit" class="btn btn-accent">Criar</button>
+                <button type="submit" class="btn border-none bg-red-800 text-white hover:bg-red-900">Criar</button>
             </div>
         </form>
     </div>

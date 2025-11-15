@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 
+
 urlpatterns = [
     path('', views.sale_list, name='sale_list'),
     path('create/', views.sale_create, name='sale_create'),
@@ -10,5 +11,15 @@ urlpatterns = [
     path('<int:sale_id>/cancel/', views.cancel_sale, name='cancel_sale'),
     path('<int:sale_id>/reopen/', views.reopen_sale, name='reopen_sale'),
     path('<int:sale_id>/delete/', views.delete_sale, name='delete_sale'),
-    path('sales/<int:sale_id>/remove-item/<int:item_id>/', views.remove_item, name='remove_item'),
+    path('<int:sale_id>/pix-qr/', views.pix_qr, name='sale_pix_qr'),
+    path(
+        '<int:sale_id>/remove-item/<int:item_id>/',
+        views.remove_item,
+        name='remove_item',
+    ),
+    path(
+        '<int:sale_id>/search-products/',
+        views.search_products,
+        name='search_products',
+    ),
 ]
