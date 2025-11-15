@@ -1,68 +1,239 @@
 {% extends 'base.html' %}
+{% load humanize %}
 {% block content %}
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-<div class="max-w-4xl mx-auto mt-4">
+<!-- Dados do gráfico -->
+{{ sales_by_day_labels|json_script:"sales-labels" }}
+{{ sales_by_day_values|json_script:"sales-values" }}
+
+<div class="max-w-7xl mx-auto mt-4 px-4">
     <h1 class="text-3xl font-bold mb-6 text-gray-800">Dashboard</h1>
     
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-xl font-semibold mb-4 text-gray-700">Relatórios Financeiros</h2>
-        
-        <div class="space-y-4">
-            <p class="text-gray-600 mb-4">
-                Gere relatórios detalhados sobre vendas, produtos mais vendidos, participação por produto e muito mais.
-            </p>
-            
-            <form id="reportForm" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
-                            Data Inicial
-                        </label>
-                        <input type="date" 
-                               id="start_date" 
-                               name="start_date" 
-                               class="input input-bordered w-full"
-                               value="{{ request.GET.start_date|default:'' }}">
-                    </div>
-                    
-                    <div>
-                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">
-                            Data Final
-                        </label>
-                        <input type="date" 
-                               id="end_date" 
-                               name="end_date" 
-                               class="input input-bordered w-full"
-                               value="{{ request.GET.end_date|default:'' }}">
-                    </div>
+    <!-- Cards de Métricas Principais -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Vendas do Dia -->
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Vendas Hoje</p>
+                    <p class="text-2xl font-bold text-green-600 mt-1">
+                        R$ {{ total_sales_today|floatformat:2|intcomma }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">{{ count_sales_today }} venda{{ count_sales_today|pluralize }}</p>
                 </div>
-                
-                <button type="button" 
-                        id="generateReportBtn"
-                        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                    <span class="material-icons">assessment</span>
-                    <span>Gerar Relatório</span>
-                </button>
-            </form>
+                <div class="bg-green-100 rounded-full p-3">
+                    <span class="material-icons text-green-600 text-3xl">today</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vendas do Mês -->
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Vendas do Mês</p>
+                    <p class="text-2xl font-bold text-blue-600 mt-1">
+                        R$ {{ total_sales_month|floatformat:2|intcomma }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">{{ count_sales_month }} venda{{ count_sales_month|pluralize }}</p>
+                </div>
+                <div class="bg-blue-100 rounded-full p-3">
+                    <span class="material-icons text-blue-600 text-3xl">calendar_month</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vendas Abertas -->
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Vendas Abertas</p>
+                    <p class="text-2xl font-bold text-yellow-600 mt-1">
+                        {{ count_open_sales }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        R$ {{ total_open_sales|floatformat:2|intcomma }} pendente{{ count_open_sales|pluralize }}
+                    </p>
+                </div>
+                <div class="bg-yellow-100 rounded-full p-3">
+                    <span class="material-icons text-yellow-600 text-3xl">shopping_cart</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total de Dívidas -->
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Total em Dívidas</p>
+                    <p class="text-2xl font-bold text-red-600 mt-1">
+                        R$ {{ total_debts|floatformat:2|intcomma }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">{{ clients_with_debts }} cliente{{ clients_with_debts|pluralize }}</p>
+                </div>
+                <div class="bg-red-100 rounded-full p-3">
+                    <span class="material-icons text-red-600 text-3xl">account_balance_wallet</span>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-semibold mb-4 text-gray-700">Informações do Relatório</h2>
-        <div class="space-y-2 text-gray-600">
-            <p><strong>O relatório inclui:</strong></p>
-            <ul class="list-disc list-inside space-y-1 ml-4">
-                <li>Vendas por mês (gráfico de barras)</li>
-                <li>Participação por produto (gráfico de pizza e barras)</li>
-                <li>Total de vendas no período</li>
-                <li>Total de produtos vendidos</li>
-                <li>Produtos em falta (quantidade = 0)</li>
-                <li>Produto mais vendido</li>
-                <li>Produto menos vendido</li>
-            </ul>
+    <!-- Cards Secundários -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <!-- Produtos em Falta -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Produtos em Falta</p>
+                    <p class="text-3xl font-bold {% if out_of_stock_count > 0 %}text-red-600{% else %}text-green-600{% endif %} mt-1">
+                        {{ out_of_stock_count }}
+                    </p>
+                </div>
+                <div class="{% if out_of_stock_count > 0 %}bg-red-100{% else %}bg-green-100{% endif %} rounded-full p-3">
+                    <span class="material-icons {% if out_of_stock_count > 0 %}text-red-600{% else %}text-green-600{% endif %} text-3xl">warning</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estoque Baixo -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Estoque Baixo</p>
+                    <p class="text-3xl font-bold {% if low_stock_count > 0 %}text-orange-600{% else %}text-green-600{% endif %} mt-1">
+                        {{ low_stock_count }}
+                    </p>
+                </div>
+                <div class="{% if low_stock_count > 0 %}bg-orange-100{% else %}bg-green-100{% endif %} rounded-full p-3">
+                    <span class="material-icons {% if low_stock_count > 0 %}text-orange-600{% else %}text-green-600{% endif %} text-3xl">inventory_2</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total de Produtos -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Total de Produtos</p>
+                    <p class="text-3xl font-bold text-gray-700 mt-1">
+                        {{ total_products }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">{{ total_clients }} cliente{{ total_clients|pluralize }} cadastrado{{ total_clients|pluralize }}</p>
+                </div>
+                <div class="bg-gray-100 rounded-full p-3">
+                    <span class="material-icons text-gray-600 text-3xl">inventory</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos e Informações -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Gráfico de Vendas dos Últimos 7 Dias -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Vendas dos Últimos 7 Dias</h3>
+            <div class="relative h-64">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Top 5 Produtos Mais Vendidos -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Top 5 Produtos (30 dias)</h3>
+            {% if top_products %}
+                <div class="space-y-3">
+                    {% for product_name, data in top_products %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">{{ product_name }}</p>
+                            <p class="text-sm text-gray-600">{{ data.quantity }} unidade{{ data.quantity|pluralize }} vendida{{ data.quantity|pluralize }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-green-600">R$ {{ data.total|floatformat:2|intcomma }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 text-center py-8">Nenhuma venda nos últimos 30 dias</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Vendas Recentes e Relatórios -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Vendas Recentes -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Vendas Recentes</h3>
+            {% if recent_sales %}
+                <div class="space-y-3 max-h-96 overflow-y-auto">
+                    {% for sale in recent_sales %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">
+                                Venda #{{ sale.pk }}
+                            </p>
+                            <p class="text-sm text-gray-600">
+                                {{ sale.get_client_display }} • {{ sale.created_at|date:"d/m/Y H:i" }}
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-green-600">R$ {{ sale.total|floatformat:2|intcomma }}</p>
+                            <a href="{% url 'sale_detail' sale.pk %}" class="text-xs text-blue-600 hover:underline">Ver detalhes</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 text-center py-8">Nenhuma venda recente</p>
+            {% endif %}
+        </div>
+        
+        <!-- Relatórios Financeiros -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Relatórios Financeiros</h2>
+            
+            <div class="space-y-4">
+                <p class="text-gray-600 text-sm">
+                    Gere relatórios detalhados sobre vendas, produtos mais vendidos, participação por produto e muito mais.
+                </p>
+                
+                <form id="reportForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
+                                Data Inicial
+                            </label>
+                            <input type="date" 
+                                   id="start_date" 
+                                   name="start_date" 
+                                   class="input input-bordered w-full"
+                                   value="{{ request.GET.start_date|default:'' }}">
+                        </div>
+                        
+                        <div>
+                            <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">
+                                Data Final
+                            </label>
+                            <input type="date" 
+                                   id="end_date" 
+                                   name="end_date" 
+                                   class="input input-bordered w-full"
+                                   value="{{ request.GET.end_date|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <button type="button" 
+                            id="generateReportBtn"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
+                        <span class="material-icons">assessment</span>
+                        <span>Gerar Relatório</span>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -103,8 +274,65 @@
 let monthsChart = null;
 let productsPieChart = null;
 let productsBarChart = null;
+let salesChart = null;
 let currentStartDate = '';
 let currentEndDate = '';
+
+// Gráfico de Vendas dos Últimos 7 Dias
+document.addEventListener('DOMContentLoaded', function() {
+    const salesLabelsElement = document.getElementById('sales-labels');
+    const salesValuesElement = document.getElementById('sales-values');
+    
+    if (!salesLabelsElement || !salesValuesElement) return;
+    
+    const salesLabels = JSON.parse(salesLabelsElement.textContent);
+    const salesValues = JSON.parse(salesValuesElement.textContent);
+    
+    const ctx = document.getElementById('salesChart');
+    if (ctx && salesLabels && salesLabels.length > 0) {
+        salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: salesLabels,
+                datasets: [{
+                    label: 'Vendas (R$)',
+                    data: salesValues,
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'R$ ' + context.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toLocaleString('pt-BR');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
 
 document.getElementById('generateReportBtn').addEventListener('click', function() {
     const startDate = document.getElementById('start_date').value;

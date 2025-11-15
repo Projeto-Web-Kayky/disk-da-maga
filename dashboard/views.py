@@ -122,8 +122,124 @@ def _get_report_data(start_date, end_date):
 @login_required
 def dashboard_view(request):
     """View principal do dashboard"""
+    from clients.models import Client
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+    
+    now = timezone.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Vendas do dia (finalizadas)
+    sales_today = Sale.objects.filter(
+        status=Sale.STATUS_FINALIZED,
+        created_at__gte=today_start,
+        created_at__lte=today_end
+    )
+    total_sales_today = sales_today.aggregate(
+        total=Sum(F('items__price') * F('items__quantity'))
+    )['total'] or Decimal('0.00')
+    count_sales_today = sales_today.count()
+    
+    # Vendas do mês (finalizadas)
+    sales_month = Sale.objects.filter(
+        status=Sale.STATUS_FINALIZED,
+        created_at__gte=month_start,
+        created_at__lte=now
+    )
+    total_sales_month = sales_month.aggregate(
+        total=Sum(F('items__price') * F('items__quantity'))
+    )['total'] or Decimal('0.00')
+    count_sales_month = sales_month.count()
+    
+    # Vendas abertas (pendentes)
+    open_sales = Sale.objects.filter(status=Sale.STATUS_OPEN)
+    count_open_sales = open_sales.count()
+    total_open_sales = open_sales.aggregate(
+        total=Sum(F('items__price') * F('items__quantity'))
+    )['total'] or Decimal('0.00')
+    
+    # Total de dívidas (clientes com fiado)
+    total_debts = Client.objects.aggregate(
+        total=Sum('client_debts')
+    )['total'] or Decimal('0.00')
+    clients_with_debts = Client.objects.filter(client_debts__gt=0).count()
+    
+    # Produtos em falta
+    out_of_stock_count = Product.objects.filter(quantity=0, is_active=True).count()
+    low_stock_count = Product.objects.filter(
+        quantity__gt=0, 
+        quantity__lte=F('low_quantity'),
+        is_active=True
+    ).count()
+    
+    # Total de produtos ativos
+    total_products = Product.objects.filter(is_active=True).count()
+    
+    # Total de clientes
+    total_clients = Client.objects.count()
+    
+    # Vendas recentes (últimas 5 finalizadas)
+    recent_sales = Sale.objects.filter(
+        status=Sale.STATUS_FINALIZED
+    ).order_by('-created_at')[:5]
+    
+    # Top 5 produtos mais vendidos (últimos 30 dias)
+    thirty_days_ago = now - timedelta(days=30)
+    recent_sales_30d = Sale.objects.filter(
+        status=Sale.STATUS_FINALIZED,
+        created_at__gte=thirty_days_ago
+    )
+    
+    product_sales_30d = defaultdict(lambda: {'quantity': 0, 'total': Decimal('0.00')})
+    for sale in recent_sales_30d:
+        for item in sale.items.all():
+            product_sales_30d[item.product.name]['quantity'] += item.quantity
+            product_sales_30d[item.product.name]['total'] += item.price * item.quantity
+    
+    top_products = sorted(
+        product_sales_30d.items(), 
+        key=lambda x: x[1]['quantity'], 
+        reverse=True
+    )[:5]
+    
+    # Vendas por dia da semana (últimos 7 dias)
+    sales_by_day_labels = []
+    sales_by_day_values = []
+    for i in range(6, -1, -1):  # De 6 dias atrás até hoje (ordem reversa)
+        day = now - timedelta(days=i)
+        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day.replace(hour=23, minute=59, second=59, microsecond=999999)
+        day_sales = Sale.objects.filter(
+            status=Sale.STATUS_FINALIZED,
+            created_at__gte=day_start,
+            created_at__lte=day_end
+        )
+        day_total = day_sales.aggregate(
+            total=Sum(F('items__price') * F('items__quantity'))
+        )['total'] or Decimal('0.00')
+        sales_by_day_labels.append(day.strftime('%d/%m'))
+        sales_by_day_values.append(float(day_total))
+    
     context = {
         'section_name': 'Dashboard',
+        'total_sales_today': float(total_sales_today),
+        'count_sales_today': count_sales_today,
+        'total_sales_month': float(total_sales_month),
+        'count_sales_month': count_sales_month,
+        'count_open_sales': count_open_sales,
+        'total_open_sales': float(total_open_sales),
+        'total_debts': float(total_debts),
+        'clients_with_debts': clients_with_debts,
+        'out_of_stock_count': out_of_stock_count,
+        'low_stock_count': low_stock_count,
+        'total_products': total_products,
+        'total_clients': total_clients,
+        'recent_sales': recent_sales,
+        'top_products': top_products,
+        'sales_by_day_labels': sales_by_day_labels,
+        'sales_by_day_values': sales_by_day_values,
     }
     return render(request, 'dashboard/dashboard.html', context)
 
