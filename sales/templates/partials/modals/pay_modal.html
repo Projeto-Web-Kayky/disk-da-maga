@@ -47,12 +47,12 @@
     form.addEventListener('submit', async function (e) {
       if (form.dataset.skipQr === '1') {
         delete form.dataset.skipQr;
-        return; 
+        return;
       }
 
       const method = (methodSelect && methodSelect.value) || '';
       if (method !== 'pix') {
-        return; 
+        return;
       }
 
       e.preventDefault();

@@ -1,0 +1,13 @@
+{% if sale.status == 'open' %}
+    <button class="btn btn-danger" 
+            hx-post="{% url 'cancel_sale' sale.id %}"
+            hx-target="#status-controls">
+        Cancelar
+    </button>
+{% elif sale.status == 'cancelled' %}
+    <button class="btn btn-warning" 
+            hx-post="{% url 'reopen_sale' sale.id %}"
+            hx-target="#status-controls">
+        Reabrir
+    </button>
+{% endif %}

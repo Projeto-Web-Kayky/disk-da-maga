@@ -98,11 +98,17 @@ class Sale(models.Model):
             self.update_client_debt_cache()
 
     def reopen(self):
-        if self.status != self.STATUS_CANCELLED:
+        if self.status not in [self.STATUS_CANCELLED, self.STATUS_FINALIZED]:
             return
-        self.status = self.STATUS_OPEN
-        self.save(update_fields=['status', 'updated_at'])
-        self.update_client_debt_cache()
+        with transaction.atomic():
+            if self.status == self.STATUS_FINALIZED:
+                # Return reserved stock
+                for item in self.items.select_related('product'):
+                    item.product.quantity += item.quantity
+                    item.product.save(update_fields=['quantity'])
+            self.status = self.STATUS_OPEN
+            self.save(update_fields=['status', 'updated_at'])
+            self.update_client_debt_cache()
 
     def apply_payment(self, amount, method=None, note=None):
         if amount <= 0:

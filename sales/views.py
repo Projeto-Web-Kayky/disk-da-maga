@@ -1,5 +1,5 @@
 from decimal import Decimal, InvalidOperation
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseBadRequest
 from django.db import transaction
@@ -205,7 +205,6 @@ def search_products(request, sale_id):
         products = Product.objects.filter(
             Q(name__icontains=query) & Q(quantity__gt=0) & Q(is_active=True)
         ).order_by('name')[:20]
-
     else:
         products = Product.objects.filter(
             quantity__gt=0, is_active=True
@@ -216,3 +215,38 @@ def search_products(request, sale_id):
         'partials/search_results_fragment.html',
         {'products': products, 'sale': sale},
     )
+
+
+@require_POST
+def cancel_sale(request, sale_id):
+    sale = get_object_or_404(Sale, pk=sale_id)
+    try:
+        sale.cancel()
+    except Exception as e:
+        return HttpResponseBadRequest(str(e))
+    products = Product.objects.filter(quantity__gt=0).order_by('name')
+    return render(request, 'partials/sale_detail_fragment.html', {'sale': sale, 'products': products})
+
+
+@require_POST
+def reopen_sale(request, sale_id):
+    sale = get_object_or_404(Sale, pk=sale_id)
+    try:
+        sale.reopen()
+    except Exception as e:
+        return HttpResponseBadRequest(str(e))
+    products = Product.objects.filter(quantity__gt=0).order_by('name')
+    return render(request, 'partials/sale_detail_fragment.html', {'sale': sale, 'products': products})
+
+
+@require_POST
+def delete_sale(request, sale_id):
+    sale = get_object_or_404(Sale, pk=sale_id)
+    with transaction.atomic():
+        if sale.status == Sale.STATUS_FINALIZED:
+            # Return reserved stock before deleting
+            for item in sale.items.select_related('product'):
+                item.product.quantity += item.quantity
+                item.product.save(update_fields=['quantity'])
+        sale.delete()
+    return redirect('sale_list')

@@ -15,11 +15,14 @@ def login_view(request):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('product_list')
-        else:
-            messages.error(request, 'Usuário ou senha inválidos.')
+            if user is not None:
+                login(request, user)
+                return redirect('product_list')
+            else:
+                messages.error(request, 'Usuário ou senha inválidos.')
+        # Se o formulário não for válido, os erros serão exibidos automaticamente
+        # pelos campos do formulário no template
+    
     return render(request, 'login.html', {'form': form})
 
 

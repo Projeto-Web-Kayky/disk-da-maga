@@ -17,3 +17,6 @@ sqlparse==0.5.3
 tomli==2.3.0
 tzdata==2025.2
 watchdog==6.0.0
+reportlab==4.4.4
+matplotlib==3.10.7
+numpy==2.3.4
