@@ -76,6 +76,12 @@ def sale_detail(request, sale_id):
     return render(request, 'sale_detail.html', context)
 
 
+def sale_header_fragment(request, sale_id):
+    """Retorna apenas o fragmento do cabeçalho da venda"""
+    sale = get_object_or_404(Sale, pk=sale_id)
+    return render(request, 'partials/sale_header_fragment.html', {'sale': sale})
+
+
 @require_POST
 def add_item(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
@@ -148,9 +154,16 @@ def remove_item(request, sale_id, item_id):
 @require_POST
 def pay_sale(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
+    
+    # Verificar status antes de processar
     if sale.status != Sale.STATUS_OPEN:
         return HttpResponseBadRequest('Venda não está aberta.')
-
+    
+    # Verificar se ainda há saldo a pagar
+    balance = sale.balance
+    if balance <= 0:
+        return HttpResponseBadRequest('Venda já está totalmente paga.')
+    
     amount_raw = (request.POST.get('amount') or '').strip()
     method = (request.POST.get('method') or '').strip()
     note = (request.POST.get('note') or '').strip()
@@ -159,13 +172,20 @@ def pay_sale(request, sale_id):
         amount = Decimal(amount_raw)
     except (InvalidOperation, TypeError):
         return HttpResponseBadRequest('Valor inválido.')
+    
+    if amount <= 0:
+        return HttpResponseBadRequest('Valor do pagamento deve ser positivo.')
+    
+    if amount > balance:
+        return HttpResponseBadRequest(f'Valor excede o saldo pendente de R$ {balance:.2f}.')
 
     try:
+        # apply_payment já usa select_for_update internamente
         sale.apply_payment(amount, method=method, note=note)
+        sale.refresh_from_db()
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    sale.refresh_from_db()
     # return payment fragment (or detail fragment if you prefer)
     return render(
         request,

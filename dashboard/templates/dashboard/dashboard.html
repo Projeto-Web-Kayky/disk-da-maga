@@ -239,18 +239,18 @@
 </div>
 
 <!-- Modal do Relatório -->
-<div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+<div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[9999] flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[95vh] flex flex-col relative">
         <!-- Header do Modal -->
-        <div class="sticky top-0 bg-red-800 text-white p-4 flex justify-between items-center rounded-t-lg">
+        <div class="bg-red-800 text-white p-4 flex justify-between items-center rounded-t-lg flex-shrink-0 z-20 shadow-md">
             <h2 class="text-2xl font-bold">Relatório Financeiro</h2>
             <button id="closeModalBtn" class="text-white hover:text-gray-200 transition-colors">
                 <span class="material-icons text-3xl">close</span>
             </button>
         </div>
         
-        <!-- Conteúdo do Modal -->
-        <div id="reportContent" class="p-6">
+        <!-- Conteúdo do Modal com Scroll -->
+        <div id="reportContent" class="p-4 relative z-0 overflow-y-auto flex-1 min-h-0">
             <div class="text-center">
                 <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-800"></div>
                 <p class="mt-4 text-gray-600">Carregando relatório...</p>
@@ -258,7 +258,7 @@
         </div>
         
         <!-- Footer do Modal -->
-        <div class="sticky bottom-0 bg-gray-100 p-4 flex justify-end gap-3 rounded-b-lg border-t">
+        <div class="bg-gray-100 p-4 flex justify-end gap-3 rounded-b-lg border-t flex-shrink-0 z-20 shadow-md">
             <button id="exportPdfBtn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 flex items-center gap-2">
                 <span class="material-icons">picture_as_pdf</span>
                 <span>Exportar Relatório</span>
@@ -421,16 +421,16 @@ function renderReport(data) {
     };
     
     let html = `
-        <div class="space-y-6">
+        <div class="space-y-4">
             <!-- Período -->
-            <div class="text-center border-b pb-4">
-                <p class="text-gray-600 text-lg">
+            <div class="text-center border-b pb-3">
+                <p class="text-gray-600 text-base">
                     <strong>Período:</strong> ${data.start_date} - ${data.end_date}
                 </p>
             </div>
             
             <!-- Estatísticas Gerais -->
-            <div class="bg-gray-50 rounded-lg p-6">
+            <div class="bg-gray-50 rounded-lg p-4">
                 <h3 class="text-xl font-bold text-gray-800 mb-4">Estatísticas Gerais</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div class="bg-white p-4 rounded-lg shadow">
@@ -456,37 +456,37 @@ function renderReport(data) {
             
             <!-- Gráficos de Vendas por Mês -->
             ${data.months.labels.length > 0 ? `
-                <div class="bg-white rounded-lg p-6 shadow">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Vendas por Mês</h3>
-                    <div class="relative h-80">
-                        <canvas id="monthsChart"></canvas>
+                <div class="bg-white rounded-lg p-4 shadow">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Vendas por Mês</h3>
+                    <div class="relative h-64 overflow-hidden">
+                        <canvas id="monthsChart" style="max-width: 100%; height: 100%;"></canvas>
                     </div>
                 </div>
             ` : ''}
             
             <!-- Gráficos de Produtos -->
             ${data.products.labels.length > 0 ? `
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <!-- Gráfico de Pizza -->
-                    <div class="bg-white rounded-lg p-6 shadow">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Participação por Produto (Pizza)</h3>
-                        <div class="relative h-80">
-                            <canvas id="productsPieChart"></canvas>
+                    <div class="bg-white rounded-lg p-4 shadow">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3">Participação por Produto (Pizza)</h3>
+                        <div class="relative h-64 overflow-hidden">
+                            <canvas id="productsPieChart" style="max-width: 100%; height: 100%;"></canvas>
                         </div>
                     </div>
                     
                     <!-- Gráfico de Barras -->
-                    <div class="bg-white rounded-lg p-6 shadow">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Participação por Produto (Barras)</h3>
-                        <div class="relative h-80">
-                            <canvas id="productsBarChart"></canvas>
+                    <div class="bg-white rounded-lg p-4 shadow">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3">Participação por Produto (Barras)</h3>
+                        <div class="relative h-64 overflow-hidden">
+                            <canvas id="productsBarChart" style="max-width: 100%; height: 100%;"></canvas>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Tabela de Produtos -->
-                <div class="bg-white rounded-lg p-6 shadow overflow-x-auto">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Detalhes dos Produtos</h3>
+                <div class="bg-white rounded-lg p-4 shadow overflow-x-auto">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Detalhes dos Produtos</h3>
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-red-800 text-white">
                             <tr>
@@ -598,9 +598,21 @@ function renderProductsCharts(productsData) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        bottom: 20
+                    }
+                },
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 8,
+                            font: {
+                                size: 11
+                            }
+                        }
                     },
                     tooltip: {
                         callbacks: {

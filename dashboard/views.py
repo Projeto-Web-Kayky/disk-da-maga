@@ -68,7 +68,7 @@ def _get_report_data(start_date, end_date):
         top_products.append(('Outros', {'quantity': others_quantity, 'total': others_total}))
     
     # Calcular percentuais
-    total_sales = sum(p[1]['total'] for p in product_sales.values())
+    total_sales = sum(p['total'] for p in product_sales.values())
     product_percentages = []
     for name, data in top_products:
         percentage = (data['total'] / total_sales * 100) if total_sales > 0 else 0
@@ -306,7 +306,7 @@ def generate_report_data(request):
         top_products.append(('Outros', {'quantity': others_quantity, 'total': others_total}))
     
     # Calcular percentuais
-    total_sales = sum(p[1]['total'] for p in product_sales.values())
+    total_sales = sum(p['total'] for p in product_sales.values())
     product_percentages = []
     product_labels = []
     product_values = []
@@ -439,7 +439,7 @@ def generate_report_pdf(request):
         top_products.append(('Outros', {'quantity': others_quantity, 'total': others_total}))
     
     # Calcular percentuais
-    total_sales = sum(p[1]['total'] for p in product_sales.values())
+    total_sales = sum(p['total'] for p in product_sales.values())
     product_percentages = []
     for name, data in top_products:
         percentage = (data['total'] / total_sales * 100) if total_sales > 0 else 0

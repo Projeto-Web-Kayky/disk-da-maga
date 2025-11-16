@@ -5,61 +5,165 @@
 <div class="p-6 max-w-6xl mx-auto space-y-8">
 
   <!-- Cabeçalho -->
-  <div class="flex justify-between items-center rounded-2xl p-6 shadow-md {{ header_color }} bg-red-800 text-white">
-    <div>
-      <h2 class="text-3xl font-extrabold"><span class="material-symbols-outlined">
-          contract
-        </span> Comanda #{{ sale.id }}</h2>
-      <p class="text-sm font-semibold text-gray-900">{% if sale.client %}
-        <label class="text-sm flex">Cliente: {{ sale.client.name }} </label>
-        {% else %}
-        <label class="text-white">Cliente sem nome</label>{% endif %}
-      </p>
-
-      <p class="text-sm">Status:
-        <span
-          class="font-semibold {% if sale.status == 'open' %}text-green-400{% elif sale.status == 'finalized' %}text-success{% else %}text-error{% endif %}">
-          {{ sale.get_status_display }}</span>
-      </p>
-    </div>
-
-    <div class="flex gap-2">
-      {% if sale.status == 'open' %}
-      <button class="btn btn-success btn-sm text-white gap-[0px]"
-        onclick="document.getElementById('pay-modal').showModal()">
-        <span class="material-symbols-outlined">attach_money</span>
-        Registrar Pagamento</button>
-      <button class="btn btn-warning btn-sm text-white"
-        onclick="document.getElementById('add-item-modal').showModal()">+
-        Adicionar Item</button>
-      {% endif %}
-      <a href="{% url 'sale_list' %}" class="btn btn-sm">⬅ Voltar</a>
-    </div>
-  </div>
+  {% include 'partials/sale_header_fragment.html' %}
 
   <!-- Itens -->
-  <div id="sale-items" class="card bg-base-100 shadow-md border border-gray-200">
+  <div class="card bg-base-100 shadow-md border border-gray-200">
     <div class="card-body">
       <div class="flex justify-between items-center mb-3">
         <h3 class="text-lg font-semibold flex items-center"><span class="material-symbols-outlined">
             shopping_cart
           </span> Itens da Comanda</h3>
         {% if sale.status == 'open' %}
-        <button class="btn btn-xs border-none bg-red-800 text-white btn-sm hover:bg-red-900" onclick="document.getElementById('add-item-modal').showModal()">+
+        <button class="btn btn-xs border-none bg-red-800 text-white btn-sm hover:bg-red-900" data-modal="add-item-modal">+
           Adicionar</button>
         {% endif %}
       </div>
 
       <div class="divider"></div>
 
-      {% include 'partials/sale_items_fragment.html' %}
+      <div id="sale-items">
+        {% include 'partials/sale_items_fragment.html' %}
+      </div>
     </div>
   </div>
 
-  <!-- Modais -->
+</div>
+
+<!-- Modais (fora do container principal para não serem afetados por atualizações HTMX) -->
+<div id="modals-container">
   {% include 'partials/modals/add_item_modal.html' %}
   {% include 'partials/modals/pay_modal.html' %}
-
 </div>
+
+<script>
+// Função para recarregar o modal de adicionar item
+function reloadAddItemModal() {
+  const modal = document.getElementById('add-item-modal');
+  if (!modal) return;
+  
+  const searchInput = modal.querySelector('input[name="search"]');
+  const resultsContainer = modal.querySelector('#product-search-results');
+  
+  if (searchInput && resultsContainer) {
+    // Limpar campo de busca
+    searchInput.value = '';
+    // Recarregar lista de produtos
+    htmx.ajax('GET', "{% url 'search_products' sale.id %}", {
+      target: '#product-search-results',
+      swap: 'innerHTML'
+    });
+  }
+}
+
+// Event delegation para garantir que os botões funcionem mesmo após atualizações HTMX
+let modalButtonHandler = function(e) {
+  const button = e.target.closest('button[data-modal]');
+  if (button) {
+    const modalId = button.getAttribute('data-modal');
+    const modal = document.getElementById(modalId);
+    if (modal && typeof modal.showModal === 'function') {
+      modal.showModal();
+      // Se for o modal de adicionar item, recarregar conteúdo
+      if (modalId === 'add-item-modal') {
+        setTimeout(function() {
+          reloadAddItemModal();
+          reinitSearchInput();
+        }, 100);
+      }
+    }
+  }
+};
+
+document.addEventListener('click', modalButtonHandler);
+
+// Inicializar formulário de pagamento
+function initPayForm() {
+  const payForm = document.getElementById('pay-form');
+  if (!payForm || payForm.dataset.initialized === 'true') return;
+  
+  payForm.dataset.initialized = 'true';
+  const methodSelect = payForm.querySelector('select[name="method"]');
+  const amountInput = payForm.querySelector('input[name="amount"]');
+  
+  let pixDialog = document.getElementById('pix-preview');
+  if (!pixDialog) {
+    pixDialog = document.createElement('dialog');
+    pixDialog.id = 'pix-preview';
+    pixDialog.className = 'modal';
+    document.body.appendChild(pixDialog);
+  }
+  
+  payForm.addEventListener('submit', async function (e) {
+    if (payForm.dataset.skipQr === '1') {
+      delete payForm.dataset.skipQr;
+      return;
+    }
+    
+    const method = (methodSelect && methodSelect.value) || '';
+    if (method !== 'pix') {
+      return;
+    }
+    
+    e.preventDefault();
+    try {
+      const amount = (amountInput && amountInput.value) ? amountInput.value : '';
+      const url = new URL("{% url 'sale_pix_qr' sale.id %}", window.location.origin);
+      if (amount) url.searchParams.set('amount', amount);
+      
+      const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      if (!res.ok) throw new Error('Falha ao carregar QR');
+      const html = await res.text();
+      
+      pixDialog.innerHTML = html;
+      
+      pixDialog.querySelectorAll('[data-action="close"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          pixDialog.close();
+          payForm.dataset.skipQr = '1';
+          payForm.requestSubmit();
+        });
+      });
+      
+      if (typeof pixDialog.showModal === 'function') pixDialog.showModal();
+    } catch (err) {
+      console.error(err);
+      alert('Não foi possível carregar o QR. Tente novamente.');
+    }
+  });
+}
+
+// Inicializar quando a página carregar
+document.addEventListener('DOMContentLoaded', initPayForm);
+
+// Função para reinicializar campo de busca do modal
+function reinitSearchInput() {
+  const searchInput = document.querySelector('#add-item-modal input[name="search"]');
+  if (searchInput) {
+    // Processar novamente com HTMX para garantir que funcione
+    htmx.process(searchInput);
+    // Limpar flag para permitir reprocessamento se necessário
+    delete searchInput.dataset.htmxInitialized;
+  }
+}
+
+// Re-inicializar após atualizações HTMX
+document.body.addEventListener('htmx:afterSwap', function(event) {
+  initPayForm();
+  
+  // Se os itens foram atualizados, reinicializar tudo
+  if (event.target.id === 'sale-items' || event.target.closest('#sale-items')) {
+    // Garantir que os botões continuem funcionando
+    setTimeout(function() {
+      reinitSearchInput();
+    }, 100);
+  }
+  
+  // Se o modal foi atualizado, garantir que o campo de busca funcione
+  if (event.target.id === 'product-search-results' || event.target.closest('#add-item-modal')) {
+    setTimeout(reinitSearchInput, 100);
+  }
+});
+</script>
 
 {% endblock %}

@@ -113,8 +113,26 @@ class Sale(models.Model):
     def apply_payment(self, amount, method=None, note=None):
         if amount <= 0:
             raise ValueError('Valor do pagamento deve ser positivo.')
+        
+        # Verificar se a venda está aberta antes de aplicar o pagamento
+        if self.status != self.STATUS_OPEN:
+            raise ValueError('Não é possível aplicar pagamento em uma venda que não está aberta.')
+        
         with transaction.atomic():
             sale_locked = Sale.objects.select_for_update().get(pk=self.pk)
+            
+            # Verificar novamente o status dentro da transação
+            if sale_locked.status != self.STATUS_OPEN:
+                raise ValueError('Venda não está mais aberta.')
+            
+            # Verificar se ainda há saldo a pagar
+            current_balance = sale_locked.balance
+            if current_balance <= 0:
+                raise ValueError('Venda já está totalmente paga.')
+            
+            if amount > current_balance:
+                raise ValueError(f'Valor do pagamento (R$ {amount:.2f}) excede o saldo pendente (R$ {current_balance:.2f}).')
+            
             Payment.objects.create(
                 sale=sale_locked, amount=amount, method=method, note=note
             )
@@ -123,7 +141,12 @@ class Sale(models.Model):
                 sale_locked.client.client_debts += amount
                 sale_locked.client.save(update_fields=['client_debts'])
             
-            if sale_locked.paid_amount >= sale_locked.total:
+            # Recalcular o valor pago após criar o pagamento
+            new_paid_amount = sale_locked.paid_amount
+            sale_total = sale_locked.total
+            
+            # Só finalizar se o valor pago for maior ou igual ao total (com tolerância para arredondamento)
+            if new_paid_amount >= sale_total - Decimal('0.01'):
                 sale_locked.finalize_and_reserve_stock()
             else:
                 sale_locked.update_client_debt_cache()

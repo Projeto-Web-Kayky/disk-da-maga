@@ -1,6 +1,35 @@
 {% for product in products %}
-<form hx-post="{% url 'add_item' sale.id %}" hx-target="#sale-items" hx-swap="outerHTML"
-    hx-on="htmx:afterRequest: document.getElementById('add-item-modal') && document.getElementById('add-item-modal').close()"
+<form hx-post="{% url 'add_item' sale.id %}" 
+    hx-target="#sale-items" 
+    hx-swap="innerHTML"
+    hx-on="htmx:afterRequest: (function(event) { 
+      // Atualizar cabeçalho imediatamente
+      htmx.ajax('GET', '{% url 'sale_header_fragment' sale.id %}', {
+        target: '#sale-header-container', 
+        swap: 'innerHTML'
+      });
+      
+      // Atualizar lista de produtos no modal imediatamente para mostrar estoque atualizado
+      const searchInput = document.querySelector('#add-item-modal input[name="search"]');
+      const currentQuery = searchInput ? searchInput.value : '';
+      
+      // Recarregar lista de produtos com a mesma busca (ou vazia se não houver busca)
+      setTimeout(function() {
+        if (currentQuery) {
+          // Se há uma busca ativa, manter a busca
+          htmx.ajax('GET', '{% url 'search_products' sale.id %}?search=' + encodeURIComponent(currentQuery), {
+            target: '#product-search-results',
+            swap: 'innerHTML'
+          });
+        } else {
+          // Se não há busca, recarregar lista completa
+          htmx.ajax('GET', '{% url 'search_products' sale.id %}', {
+            target: '#product-search-results',
+            swap: 'innerHTML'
+          });
+        }
+      }, 200);
+    })()"
     method="POST"
     class="flex justify-between items-center bg-base-100 hover:bg-base-300 transition rounded-lg p-3 shadow-sm">
     {% csrf_token %}

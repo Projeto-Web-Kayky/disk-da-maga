@@ -1,0 +1,44 @@
+<div id="sale-header-container">
+<div id="sale-header" class="flex justify-between items-center rounded-2xl p-6 shadow-md bg-red-800 text-white">
+  <div>
+    <h2 class="text-3xl font-extrabold"><span class="material-symbols-outlined">
+        contract
+      </span> Comanda #{{ sale.id }}</h2>
+    <p class="text-sm font-semibold text-gray-900">{% if sale.client %}
+      <label class="text-sm flex">Cliente: {{ sale.client.name }} </label>
+      {% else %}
+      <label class="text-white">Cliente sem nome</label>{% endif %}
+    </p>
+
+    <p class="text-sm">Status:
+      <span
+        class="font-semibold {% if sale.status == 'open' %}text-green-400{% elif sale.status == 'finalized' %}text-success{% else %}text-error{% endif %}">
+        {{ sale.get_status_display }}</span>
+    </p>
+    
+    {% if sale.status == 'open' %}
+    <p class="text-sm mt-1">
+      <span class="font-semibold">Total: R$ {{ sale.total|floatformat:2 }}</span>
+      {% if sale.paid_amount > 0 %}
+      | <span class="font-semibold">Pago: R$ {{ sale.paid_amount|floatformat:2 }}</span>
+      | <span class="font-semibold">Saldo: R$ {{ sale.balance|floatformat:2 }}</span>
+      {% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="flex gap-2">
+    {% if sale.status == 'open' %}
+    <button id="btn-pay-modal" class="btn btn-success btn-sm text-white gap-[0px]"
+      data-modal="pay-modal">
+      <span class="material-symbols-outlined">attach_money</span>
+      Registrar Pagamento</button>
+    <button id="btn-add-item-modal" class="btn btn-warning btn-sm text-white"
+      data-modal="add-item-modal">+
+      Adicionar Item</button>
+    {% endif %}
+    <a href="{% url 'sale_list' %}" class="btn btn-sm">⬅ Voltar</a>
+  </div>
+</div>
+</div>
+

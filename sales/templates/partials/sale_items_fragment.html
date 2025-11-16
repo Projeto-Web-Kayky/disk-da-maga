@@ -11,7 +11,10 @@
             <p class="font-bold text-success">R$ {{ item.price|floatformat:2 }}</p>
 
             {% if sale.status == 'open' %}
-            <form hx-post="{% url 'remove_item' sale.id item.id %}" hx-target="#sale-items" hx-swap="outerHTML"
+            <form hx-post="{% url 'remove_item' sale.id item.id %}" 
+                hx-target="#sale-items" 
+                hx-swap="innerHTML"
+                hx-on="htmx:afterRequest: htmx.ajax('GET', '{% url 'sale_header_fragment' sale.id %}', {target: '#sale-header-container', swap: 'innerHTML'})"
                 method="POST" class="mt-2 inline">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-ghost btn-xs text-error hover:bg-error/10">🗑️ Excluir</button>
