@@ -15,6 +15,13 @@
                 class="card-body flex justify-between px-[2.5em] {% if sale.status == 'open' %}bg-red-800 text-white{% elif sale.status == 'finalized' %}bg-green-700 text-white{% elif sale.status == 'cancelled' %}bg-gray-700 text-gray-200{% else %}bg-slate-200 text-gray-800{% endif %}">
                 <div>
                     <h2 class="text-xl font-semibold">Comanda #{{ sale.id }}</h2>
+                    <div class="text-sm mb-2">
+                        {% if sale.status == 'finalized' %}
+                            <span>Encerrado em: {{ sale.updated_at|date:"d/m/Y H:i" }}</span>
+                        {% else %}
+                            <span>Criado em: {{ sale.created_at|date:"d/m/Y H:i" }}</span>
+                        {% endif %}
+                    </div>
                     <div class="block">
                         <span class="text-sm badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg">
                             {%if sale.client %}
