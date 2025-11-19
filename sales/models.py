@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.db import models, transaction
 from django.db.models import F, Sum
+from django.db.models.functions import Coalesce
 
 
 class Sale(models.Model):
@@ -48,6 +49,12 @@ class Sale(models.Model):
     @property
     def balance(self):
         return (self.total - self.paid_amount).quantize(Decimal('0.01'))
+    
+    @property
+    def credit_amount(self):
+        """Retorna o valor do crédito (saldo negativo) como valor positivo"""
+        balance = self.balance
+        return abs(balance) if balance < 0 else Decimal('0.00')
 
     def get_client_display(self):
         return self.client.name if self.client else self.client_name
@@ -68,7 +75,14 @@ class Sale(models.Model):
         self.client.client_debts = (debt - paid).quantize(Decimal('0.01'))
         self.client.save(update_fields=['client_debts'])
 
-    def finalize_and_reserve_stock(self):
+    def finalize_and_reserve_stock(self, skip_debt_update=False):
+        """
+        Finaliza a venda e reserva o estoque.
+        
+        Args:
+            skip_debt_update: Se True, não atualiza o cache da dívida do cliente.
+                             Use quando o pagamento foi fiado e a dívida já foi atualizada manualmente.
+        """
         if self.status != self.STATUS_OPEN:
             return
         with transaction.atomic():
@@ -84,7 +98,9 @@ class Sale(models.Model):
                 item.product.save(update_fields=['quantity'])
             sale_locked.status = self.STATUS_FINALIZED
             sale_locked.save(update_fields=['status', 'updated_at'])
-            sale_locked.update_client_debt_cache()
+            # Só atualizar cache da dívida se não foi solicitado para pular
+            if not skip_debt_update:
+                sale_locked.update_client_debt_cache()
 
     def cancel(self):
         if self.status == self.STATUS_CANCELLED:
@@ -128,6 +144,8 @@ class Sale(models.Model):
             # Verificar se ainda há saldo a pagar
             current_balance = sale_locked.balance
             if current_balance <= 0:
+                if current_balance < 0:
+                    raise ValueError(f'Não é possível realizar pagamento. Há um crédito de R$ {abs(current_balance):.2f} nesta comanda.')
                 raise ValueError('Venda já está totalmente paga.')
             
             if amount > current_balance:
@@ -139,9 +157,17 @@ class Sale(models.Model):
                 sale=sale_locked, amount=amount, method=method, note=note
             )
             
-            if method == 'fiado' and sale_locked.client:
-                sale_locked.client.client_debts += amount
-                sale_locked.client.save(update_fields=['client_debts'])
+            # Se o pagamento for fiado, adicionar à dívida do cliente
+            # e não recalcular o cache (para não sobrescrever o valor adicionado)
+            if method and method.strip().lower() == 'fiado' and sale_locked.client:
+                # Usar F() para atualização atômica no banco de dados
+                # Isso garante que a atualização seja feita diretamente no banco
+                from clients.models import Client
+                Client.objects.filter(pk=sale_locked.client.pk).update(
+                    client_debts=F('client_debts') + amount
+                )
+                # Recarregar o cliente para garantir que temos o valor atualizado
+                sale_locked.client.refresh_from_db()
             
             # Recalcular o valor pago após criar o pagamento
             new_paid_amount = sale_locked.paid_amount
@@ -149,9 +175,15 @@ class Sale(models.Model):
             
             # Só finalizar se o valor pago for maior ou igual ao total (com tolerância para arredondamento)
             if new_paid_amount >= sale_total - Decimal('0.01'):
-                sale_locked.finalize_and_reserve_stock()
+                # Se o pagamento foi fiado, não atualizar o cache da dívida ao finalizar
+                # (a dívida já foi atualizada manualmente acima)
+                is_fiado = method and method.strip().lower() == 'fiado'
+                sale_locked.finalize_and_reserve_stock(skip_debt_update=is_fiado)
             else:
-                sale_locked.update_client_debt_cache()
+                # Atualizar cache da dívida apenas se não for pagamento fiado
+                # (pagamentos fiados já atualizaram a dívida manualmente acima)
+                if not (method and method.strip().lower() == 'fiado'):
+                    sale_locked.update_client_debt_cache()
 
 
 class SaleItem(models.Model):

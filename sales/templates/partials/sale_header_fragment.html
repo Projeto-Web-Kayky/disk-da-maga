@@ -21,7 +21,11 @@
       <span class="font-semibold">Total: R$ {{ sale.total|floatformat:2 }}</span>
       {% if sale.paid_amount > 0 %}
       | <span class="font-semibold">Pago: R$ {{ sale.paid_amount|floatformat:2 }}</span>
+      {% if sale.balance < 0 %}
+      | <span class="font-semibold text-yellow-400">Crédito: R$ {{ sale.credit_amount|floatformat:2 }}</span>
+      {% else %}
       | <span class="font-semibold">Saldo: R$ {{ sale.balance|floatformat:2 }}</span>
+      {% endif %}
       {% endif %}
     </p>
     {% endif %}

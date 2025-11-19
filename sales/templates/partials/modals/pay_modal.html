@@ -14,7 +14,7 @@
     <form hx-post="{% url 'pay_sale' sale.id %}" 
       hx-target="#sale-items" 
       hx-swap="innerHTML"
-      hx-trigger="submit"
+      {% if sale.balance <= 0 %}onsubmit="event.preventDefault(); return false;"{% else %}hx-trigger="submit"{% endif %}
       hx-on::response-error="
         const errorDiv = document.getElementById('pay-error-message');
         const errorText = document.getElementById('pay-error-text');
@@ -24,6 +24,7 @@
           errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       "
+      {% if sale.balance > 0 %}
       onsubmit="
         const amountInput = document.getElementById('pay-amount-input');
         const amount = parseFloat(amountInput.value) || 0;
@@ -41,16 +42,18 @@
         }
         return true;
       "
+      {% endif %}
       method="POST" class="flex flex-col gap-3" id="pay-form">
       {% csrf_token %}
       <input type="number" 
         name="amount" 
         step="0.01" 
-        required 
-        placeholder="Valor a pagar" 
-        class="input input-bordered"
+        {% if sale.balance > 0 %}required{% else %}disabled{% endif %}
+        placeholder="{% if sale.balance <= 0 %}Não há saldo a pagar{% else %}Valor a pagar{% endif %}" 
+        class="input input-bordered {% if sale.balance <= 0 %}input-disabled{% endif %}"
         id="pay-amount-input"
-        max="{{ sale.balance }}"
+        {% if sale.balance > 0 %}max="{{ sale.balance }}"{% endif %}
+        {% if sale.balance > 0 %}
         oninput="
           const errorDiv = document.getElementById('pay-error-message');
           if (errorDiv) errorDiv.classList.add('hidden');
@@ -64,7 +67,8 @@
               errorDiv.classList.remove('hidden');
             }
           }
-        ">
+        "
+        {% endif %}>
       <select name="method" class="select select-bordered">
         <option value="pix">PIX</option>
         <option value="cash">Dinheiro</option>
@@ -74,14 +78,27 @@
       <input type="text" name="note" placeholder="Observação (opcional)" class="input input-bordered">
 
       <div class="flex justify-between items-center gap-2 mt-2">
+        {% if sale.balance < 0 %}
+        <h3 class="font-extrabold text-lg text-yellow-600">
+          Crédito: R$ {{ sale.credit_amount|floatformat:2 }}
+        </h3>
+        <div class="flex gap-2">
+          <button type="button" class="btn btn-outline btn-error"
+            onclick="document.getElementById('pay-modal').close()">Cancelar</button>
+          <button type="button" class="btn btn-success text-white" disabled>
+            Não é possível pagar (há crédito)
+          </button>
+        </div>
+        {% else %}
         <h3 class="font-extrabold text-lg text-green-700">
-          Saldo: R$ {{ sale.balance }}
+          Saldo: R$ {{ sale.balance|floatformat:2 }}
         </h3>
         <div class="flex gap-2">
           <button type="button" class="btn btn-outline btn-error"
             onclick="document.getElementById('pay-modal').close()">Cancelar</button>
           <button type="submit" class="btn btn-success text-white">Registrar</button>
         </div>
+        {% endif %}
       </div>
     </form>
   </div>

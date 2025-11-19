@@ -168,11 +168,16 @@ def pay_sale(request, sale_id):
     # Verificar se ainda há saldo a pagar
     balance = sale.balance
     if balance <= 0:
+        if balance < 0:
+            return HttpResponseBadRequest(f'Não é possível realizar pagamento. Há um crédito de R$ {abs(balance):.2f} nesta comanda.')
         return HttpResponseBadRequest('Venda já está totalmente paga.')
     
     amount_raw = (request.POST.get('amount') or '').strip()
     method = (request.POST.get('method') or '').strip()
     note = (request.POST.get('note') or '').strip()
+    
+    # Debug: verificar se o método está sendo recebido
+    # print(f"DEBUG: Método recebido: '{method}', Tipo: {type(method)}")
 
     try:
         amount = Decimal(amount_raw)

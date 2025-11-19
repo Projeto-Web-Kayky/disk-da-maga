@@ -36,9 +36,15 @@
                             <span
                                 class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Pago:
                                 R$ {{ sale.paid_amount }} </span>
+                            {% if sale.balance < 0 %}
+                            <span
+                                class="badge badge-soft badge-accent bg-yellow-600 border-none text-white badge-lg text-sm">Crédito:
+                                R$ {{ sale.credit_amount|floatformat:2 }}</span>
+                            {% else %}
                             <span
                                 class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Saldo:
-                                R$ {{ sale.balance }}</span>
+                                R$ {{ sale.balance|floatformat:2 }}</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
