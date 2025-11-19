@@ -131,7 +131,9 @@ class Sale(models.Model):
                 raise ValueError('Venda já está totalmente paga.')
             
             if amount > current_balance:
-                raise ValueError(f'Valor do pagamento (R$ {amount:.2f}) excede o saldo pendente (R$ {current_balance:.2f}).')
+                raise ValueError(
+                    f'O valor informado (R$ {amount:.2f}) é maior que o saldo devido (R$ {current_balance:.2f}).'
+                )
             
             Payment.objects.create(
                 sale=sale_locked, amount=amount, method=method, note=note

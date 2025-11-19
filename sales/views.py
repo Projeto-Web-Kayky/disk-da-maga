@@ -82,6 +82,12 @@ def sale_header_fragment(request, sale_id):
     return render(request, 'partials/sale_header_fragment.html', {'sale': sale})
 
 
+def pay_modal_fragment(request, sale_id):
+    """Retorna apenas o fragmento do modal de pagamento atualizado"""
+    sale = get_object_or_404(Sale, pk=sale_id)
+    return render(request, 'partials/modals/pay_modal.html', {'sale': sale})
+
+
 @require_POST
 def add_item(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
@@ -177,7 +183,9 @@ def pay_sale(request, sale_id):
         return HttpResponseBadRequest('Valor do pagamento deve ser positivo.')
     
     if amount > balance:
-        return HttpResponseBadRequest(f'Valor excede o saldo pendente de R$ {balance:.2f}.')
+        return HttpResponseBadRequest(
+            f'O valor informado (R$ {amount:.2f}) é maior que o saldo devido (R$ {balance:.2f}).'
+        )
 
     try:
         # apply_payment já usa select_for_update internamente
@@ -186,11 +194,11 @@ def pay_sale(request, sale_id):
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    # return payment fragment (or detail fragment if you prefer)
+    # Retornar os itens atualizados (como esperado pelo hx-target)
     return render(
         request,
-        'partials/sale_payment_fragment.html',
-        {'sale': sale, 'close_modal': True},
+        'partials/sale_items_fragment.html',
+        {'sale': sale},
     )
 
 

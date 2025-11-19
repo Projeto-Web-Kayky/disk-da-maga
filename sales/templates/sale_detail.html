@@ -86,6 +86,12 @@ function initPayForm() {
   const methodSelect = payForm.querySelector('select[name="method"]');
   const amountInput = payForm.querySelector('input[name="amount"]');
   
+  // Limpar mensagem de erro quando o modal for atualizado
+  const errorDiv = document.getElementById('pay-error-message');
+  if (errorDiv) {
+    errorDiv.classList.add('hidden');
+  }
+  
   let pixDialog = document.getElementById('pix-preview');
   if (!pixDialog) {
     pixDialog = document.createElement('dialog');
@@ -97,6 +103,21 @@ function initPayForm() {
   payForm.addEventListener('submit', async function (e) {
     if (payForm.dataset.skipQr === '1') {
       delete payForm.dataset.skipQr;
+      return;
+    }
+    
+    // Verificar se o valor é válido antes de processar PIX
+    const amount = parseFloat(amountInput.value) || 0;
+    const balance = parseFloat(amountInput.getAttribute('max') || '0');
+    if (amount > balance) {
+      e.preventDefault();
+      const errorDiv = document.getElementById('pay-error-message');
+      const errorText = document.getElementById('pay-error-text');
+      if (errorDiv && errorText) {
+        errorText.textContent = 'O valor informado (R$ ' + amount.toFixed(2) + ') é maior que o saldo devido (R$ ' + balance.toFixed(2) + ').';
+        errorDiv.classList.remove('hidden');
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
       return;
     }
     
@@ -151,8 +172,56 @@ function reinitSearchInput() {
 document.body.addEventListener('htmx:afterSwap', function(event) {
   initPayForm();
   
-  // Se os itens foram atualizados, reinicializar tudo
+  // Se os itens foram atualizados (após pagamento ou adicionar item)
   if (event.target.id === 'sale-items' || event.target.closest('#sale-items')) {
+    // Atualizar o cabeçalho com os novos valores
+    htmx.ajax('GET', "{% url 'sale_header_fragment' sale.id %}", {
+      target: '#sale-header-container',
+      swap: 'innerHTML'
+    });
+    
+    // Atualizar o modal de pagamento para refletir o novo saldo
+    setTimeout(function() {
+      htmx.ajax('GET', "{% url 'pay_modal_fragment' sale.id %}", {
+        target: '#pay-modal',
+        swap: 'outerHTML',
+        onSuccess: function() {
+          // Re-inicializar o formulário de pagamento
+          setTimeout(function() {
+            if (typeof initPayForm === 'function') {
+              const payForm = document.getElementById('pay-form');
+              if (payForm) {
+                payForm.dataset.initialized = 'false';
+                // Limpar mensagem de erro ao atualizar o modal
+                const errorDiv = document.getElementById('pay-error-message');
+                if (errorDiv) errorDiv.classList.add('hidden');
+              }
+              initPayForm();
+            }
+          }, 100);
+        }
+      });
+    }, 200);
+    
+    // Atualizar lista de produtos no modal de adicionar item (se estiver aberto)
+    const searchInput = document.querySelector('#add-item-modal input[name="search"]');
+    if (searchInput) {
+      const currentQuery = searchInput.value || '';
+      setTimeout(function() {
+        if (currentQuery) {
+          htmx.ajax('GET', "{% url 'search_products' sale.id %}?search=" + encodeURIComponent(currentQuery), {
+            target: '#product-search-results',
+            swap: 'innerHTML'
+          });
+        } else {
+          htmx.ajax('GET', "{% url 'search_products' sale.id %}", {
+            target: '#product-search-results',
+            swap: 'innerHTML'
+          });
+        }
+      }, 250);
+    }
+    
     // Garantir que os botões continuem funcionando
     setTimeout(function() {
       reinitSearchInput();
@@ -162,6 +231,20 @@ document.body.addEventListener('htmx:afterSwap', function(event) {
   // Se o modal foi atualizado, garantir que o campo de busca funcione
   if (event.target.id === 'product-search-results' || event.target.closest('#add-item-modal')) {
     setTimeout(reinitSearchInput, 100);
+  }
+});
+
+// Listener específico para quando o pagamento for realizado
+document.body.addEventListener('htmx:afterRequest', function(event) {
+  // Se foi uma requisição de pagamento bem-sucedida
+  if (event.detail.pathInfo && event.detail.pathInfo.requestPath.includes('/pay/')) {
+    if (event.detail.xhr.status === 200) {
+      // Fechar o modal
+      const payModal = document.getElementById('pay-modal');
+      if (payModal) {
+        payModal.close();
+      }
+    }
   }
 });
 </script>

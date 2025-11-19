@@ -7,6 +7,7 @@ urlpatterns = [
     path('create/', views.sale_create, name='sale_create'),
     path('<int:sale_id>/', views.sale_detail, name='sale_detail'),
     path('<int:sale_id>/header/', views.sale_header_fragment, name='sale_header_fragment'),
+    path('<int:sale_id>/pay-modal/', views.pay_modal_fragment, name='pay_modal_fragment'),
     path('<int:sale_id>/add-item/', views.add_item, name='add_item'),
     path('<int:sale_id>/pay/', views.pay_sale, name='pay_sale'),
     path('<int:sale_id>/cancel/', views.cancel_sale, name='cancel_sale'),
