@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.db import models, transaction
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Q
 from django.db.models.functions import Coalesce
 
 
@@ -60,20 +60,49 @@ class Sale(models.Model):
         return self.client.name if self.client else self.client_name
 
     def update_client_debt_cache(self):
+        """
+        Recalcula e atualiza a dívida do cliente.
+        
+        A dívida do cliente é SIMPLESMENTE a soma de todos os pagamentos fiados
+        que ele fez em TODAS as vendas (abertas e finalizadas).
+        
+        Pagamentos fiados são dívidas que o cliente deve pagar depois.
+        Não importa se a venda está aberta ou finalizada, o pagamento fiado
+        sempre aumenta a dívida do cliente.
+        
+        Exemplo:
+        - Venda de 7 reais
+        - Pagamento de 6 reais no PIX (não-fiado) - não afeta a dívida
+        - Pagamento de 1 real fiado (conta do cliente) - aumenta a dívida em 1
+        - Dívida = 1 real (apenas o pagamento fiado)
+        
+        IMPORTANTE: Este método SEMPRE recalcula do zero, substituindo o valor atual.
+        Isso garante que não há duplicação.
+        """
         if not self.client:
             return
-        debt = Sale.objects.filter(
-            client=self.client, status=self.STATUS_OPEN
-        ).aggregate(total=Sum(F('items__price') * F('items__quantity')))[
-            'total'
-        ] or Decimal(
-            '0.00'
+        
+        Payment = self.payments.model
+        
+        # Calcular APENAS a soma de todos os pagamentos fiados
+        # Pagamentos fiados são dívidas que o cliente deve pagar
+        # Não importa o status da venda, pagamentos fiados sempre aumentam a dívida
+        pagamentos_fiado_total = Payment.objects.filter(
+            sale__client=self.client
+        ).filter(method__iexact='fiado').aggregate(
+            total=Sum('amount')
+        )['total'] or Decimal('0.00')
+        
+        # A dívida do cliente é APENAS a soma dos pagamentos fiados
+        divida_final = pagamentos_fiado_total.quantize(Decimal('0.01'))
+        
+        # Atualizar a dívida do cliente (substitui o valor atual)
+        from clients.models import Client
+        Client.objects.filter(pk=self.client.pk).update(
+            client_debts=divida_final
         )
-        paid = Sale.objects.filter(
-            client=self.client, status=self.STATUS_OPEN
-        ).aggregate(paid=Sum('payments__amount'))['paid'] or Decimal('0.00')
-        self.client.client_debts = (debt - paid).quantize(Decimal('0.01'))
-        self.client.save(update_fields=['client_debts'])
+        # Recarregar o cliente para garantir sincronização
+        self.client.refresh_from_db()
 
     def finalize_and_reserve_stock(self, skip_debt_update=False):
         """
@@ -81,7 +110,8 @@ class Sale(models.Model):
         
         Args:
             skip_debt_update: Se True, não atualiza o cache da dívida do cliente.
-                             Use quando o pagamento foi fiado e a dívida já foi atualizada manualmente.
+                             Mantido para compatibilidade, mas não é mais necessário
+                             já que sempre recalculamos do zero sem duplicação.
         """
         if self.status != self.STATUS_OPEN:
             return
@@ -98,7 +128,7 @@ class Sale(models.Model):
                 item.product.save(update_fields=['quantity'])
             sale_locked.status = self.STATUS_FINALIZED
             sale_locked.save(update_fields=['status', 'updated_at'])
-            # Só atualizar cache da dívida se não foi solicitado para pular
+            # Sempre recalcular a dívida (não há mais duplicação pois recalculamos do zero)
             if not skip_debt_update:
                 sale_locked.update_client_debt_cache()
 
@@ -153,36 +183,35 @@ class Sale(models.Model):
                     f'O valor informado (R$ {amount:.2f}) é maior que o saldo devido (R$ {current_balance:.2f}).'
                 )
             
+            # Obter o modelo Payment antes de usá-lo
+            Payment = sale_locked.payments.model
+            
+            # Criar o pagamento
             Payment.objects.create(
                 sale=sale_locked, amount=amount, method=method, note=note
             )
             
-            # Se o pagamento for fiado, adicionar à dívida do cliente
-            # e não recalcular o cache (para não sobrescrever o valor adicionado)
-            if method and method.strip().lower() == 'fiado' and sale_locked.client:
-                # Usar F() para atualização atômica no banco de dados
-                # Isso garante que a atualização seja feita diretamente no banco
-                from clients.models import Client
-                Client.objects.filter(pk=sale_locked.client.pk).update(
-                    client_debts=F('client_debts') + amount
-                )
-                # Recarregar o cliente para garantir que temos o valor atualizado
-                sale_locked.client.refresh_from_db()
+            # IMPORTANTE: NÃO adicionar manualmente pagamentos fiados à dívida
+            # A dívida será recalculada do zero pelo update_client_debt_cache()
+            # Isso garante que não há duplicação
             
             # Recalcular o valor pago após criar o pagamento
             new_paid_amount = sale_locked.paid_amount
             sale_total = sale_locked.total
             
+            # Verificar se é pagamento fiado
+            is_fiado = method and method.strip().lower() == 'fiado'
+            
             # Só finalizar se o valor pago for maior ou igual ao total (com tolerância para arredondamento)
             if new_paid_amount >= sale_total - Decimal('0.01'):
-                # Se o pagamento foi fiado, não atualizar o cache da dívida ao finalizar
-                # (a dívida já foi atualizada manualmente acima)
-                is_fiado = method and method.strip().lower() == 'fiado'
-                sale_locked.finalize_and_reserve_stock(skip_debt_update=is_fiado)
+                # Finalizar a venda
+                # Se o último pagamento foi fiado, a dívida já será recalculada no finalize
+                # Se não foi fiado, também será recalculada
+                sale_locked.finalize_and_reserve_stock(skip_debt_update=False)
             else:
-                # Atualizar cache da dívida apenas se não for pagamento fiado
-                # (pagamentos fiados já atualizaram a dívida manualmente acima)
-                if not (method and method.strip().lower() == 'fiado'):
+                # Se não finalizou, recalcular a dívida apenas se o pagamento foi fiado
+                # Se foi pagamento não-fiado, não precisa recalcular (não afeta a dívida)
+                if is_fiado:
                     sale_locked.update_client_debt_cache()
 
 
