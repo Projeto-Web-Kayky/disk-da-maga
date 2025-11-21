@@ -12,17 +12,17 @@ def client_list(request):
     clients = Client.objects.all()
     form = ClientForm(request.POST or None, request.FILES or None)
 
-    if request.method == 'POST' and form.is_valid():
+    if request.method == "POST" and form.is_valid():
         form.save()
-        return redirect('client_list')
+        return redirect("client_list")
 
     return render(
         request,
-        'client_list.html',
+        "client_list.html",
         {
-            'clients': clients,
-            'form': form,
-            'section_name': 'Lista de Clientes',
+            "clients": clients,
+            "form": form,
+            "section_name": "Lista de Clientes",
         },
     )
 
@@ -31,8 +31,37 @@ def client_list(request):
 def client_detail(request, client_id):
     """Render client detail modal fragment."""
     client = get_object_or_404(Client, pk=client_id)
+    return render(request, "partials/client_detail_modal.html", {"client": client})
+
+
+@login_required
+def client_edit(request, client_id):
+    client = get_object_or_404(Client, pk=client_id)
+
+    if request.method == "POST":
+        form = ClientForm(request.POST, request.FILES, instance=client)
+        if form.is_valid():
+            form.save()
+            if request.headers.get("Hx-Request") == "true":
+                response = HttpResponse(status=204)
+                response["HX-Refresh"] = "true"
+                return response
+            return redirect("client_list")
+
+        # inválido: re-render modal com status 422 (HTMX irá trocar o modal)
+        if request.headers.get("Hx-Request") == "true":
+            return render(
+                request,
+                "partials/client_edit_modal.html",
+                {"form": form, "client": client},
+                status=422,
+            )
+
+    else:
+        form = ClientForm(instance=client)
+
     return render(
-        request, 'partials/client_detail_modal.html', {'client': client}
+        request, "partials/client_edit_modal.html", {"form": form, "client": client}
     )
 
 
@@ -53,7 +82,5 @@ def client_delete(request, client_id):
     # Respond with an HX-Trigger header so the frontend can remove the
     # client row from the DOM and close the modal without a full reload.
     response = HttpResponse(status=200)
-    response['HX-Trigger'] = json.dumps(
-        {'clientDeleted': {'clientId': client_id}}
-    )
+    response["HX-Trigger"] = json.dumps({"clientDeleted": {"clientId": client_id}})
     return response

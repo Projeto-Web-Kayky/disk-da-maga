@@ -1,0 +1,84 @@
+<div x-data="{ editOpen: true }" x-show="editOpen" x-transition.opacity
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="editOpen = false"
+  @close-edit.window="editOpen = false">
+
+  <div class="w-full max-w-md bg-white rounded-xl shadow-xl p-6 mx-4">
+
+    <div class="flex justify-start mb-4">
+      <button type="button" @click="editOpen = false" class="text-gray-500 hover:text-gray-800 transition">
+        <span class="material-symbols-outlined text-2xl">arrow_back</span>
+      </button>
+    </div>
+
+    <h2 class="text-xl font-semibold text-gray-900 text-center">Editar Cliente</h2>
+    <p class="text-xs text-gray-500 text-center mb-2">Atualize as informações abaixo</p>
+
+    {% if form.non_field_errors %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+      {% for err in form.non_field_errors %}
+      <p class="text-sm text-red-700">{{ err }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form hx-post="{% url 'client_edit' client.client_id %}" hx-target="closest div[x-data]" hx-swap="none"
+      enctype="multipart/form-data"
+      hx-on="htmx:afterRequest: if (event.detail.xhr && event.detail.xhr.status === 204) { editOpen = false }">
+
+      {% csrf_token %}
+      <div class="flex justify-center mb-4">
+        {% if client.photo %}
+        <img src="{{ client.photo.url }}" alt="{{ client.name }}"
+          class="w-24 h-24 rounded-full object-cover ring-2 ring-green-700 shadow-sm">
+        {% else %}
+        <div
+          class="w-24 h-24 rounded-full bg-purple-100 ring-2 ring-green-700 flex items-center justify-center shadow-sm">
+          <span class="material-symbols-outlined text-4xl text-green-700">person</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.name.label_tag }} *
+        {{ form.name }}
+        {% if form.name.errors %}
+        {% for e in form.name.errors %}
+        <p class="text-sm text-red-600 mt-1">{{ e }}</p>
+        {% endfor %}
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.nickname.label_tag }}
+        {{ form.nickname }}
+        {% if form.nickname.errors %}
+        {% for e in form.nickname.errors %}
+        <p class="text-sm text-red-600 mt-1">{{ e }}</p>
+        {% endfor %}
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.phone_number.label_tag }} *
+        {{ form.phone_number }}
+        {% if form.phone_number.errors %}
+        {% for e in form.phone_number.errors %}
+        <p class="text-sm text-red-600 mt-1">{{ e }}</p>
+        {% endfor %}
+        {% endif %}
+      </div>
+
+      <div class="flex gap-3 mt-4">
+        <button type="button" @click="editOpen = false"
+          class="flex-1 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium transition">
+          Cancelar
+        </button>
+
+        <button type="submit"
+          class="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition">
+          Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
