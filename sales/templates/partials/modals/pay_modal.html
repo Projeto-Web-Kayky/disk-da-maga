@@ -1,107 +1,110 @@
-<dialog id="pay-modal" class="modal">
+<dialog id="pay-modal" class="modal" x-data="payModal({{ sale.balance|floatformat:2 }})">
   <div class="modal-box w-11/12 max-w-md border-green-500 bg-base-200 text-base-content">
+
     <h3 class="font-extrabold text-lg mb-4 text-green-700 flex items-center">
       <span class="material-symbols-outlined">attach_money</span>
       Registrar Pagamento
     </h3>
 
-    <!-- Área de mensagem de erro -->
-    <div id="pay-error-message" class="hidden alert alert-error mb-3">
+    <!-- Mensagem de erro -->
+    <div x-show="error" class="alert alert-error mb-3">
       <span class="material-symbols-outlined">error</span>
-      <span id="pay-error-text"></span>
+      <span x-text="error"></span>
     </div>
 
-    <form hx-post="{% url 'pay_sale' sale.id %}" 
-      hx-target="#sale-items" 
-      hx-swap="innerHTML"
-      {% if sale.balance <= 0 %}onsubmit="event.preventDefault(); return false;"{% else %}hx-trigger="submit"{% endif %}
-      hx-on::response-error="
-        const errorDiv = document.getElementById('pay-error-message');
-        const errorText = document.getElementById('pay-error-text');
-        if (errorDiv && errorText && event.detail.xhr.responseText) {
-          errorText.textContent = event.detail.xhr.responseText.trim();
-          errorDiv.classList.remove('hidden');
-          errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      "
-      {% if sale.balance > 0 %}
-      onsubmit="
-        const amountInput = document.getElementById('pay-amount-input');
-        const amount = parseFloat(amountInput.value) || 0;
-        const balance = parseFloat('{{ sale.balance }}');
-        if (amount > balance) {
-          event.preventDefault();
-          const errorDiv = document.getElementById('pay-error-message');
-          const errorText = document.getElementById('pay-error-text');
-          if (errorDiv && errorText) {
-            errorText.textContent = 'O valor informado (R$ ' + amount.toFixed(2) + ') é maior que o saldo devido (R$ ' + balance.toFixed(2) + ').';
-            errorDiv.classList.remove('hidden');
-            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
-          return false;
-        }
-        return true;
-      "
-      {% endif %}
-      method="POST" class="flex flex-col gap-3" id="pay-form">
+    <form hx-post="{% url 'pay_sale' sale.id %}" hx-target="#sale-items" hx-swap="innerHTML"
+      hx-on::response-error="handleHTMXError(event)" @submit.prevent="validateBeforeSubmit($event)" method="POST"
+      class="flex flex-col gap-3">
       {% csrf_token %}
-      <input type="number" 
-        name="amount" 
-        step="0.01" 
-        {% if sale.balance > 0 %}required{% else %}disabled{% endif %}
-        placeholder="{% if sale.balance <= 0 %}Não há saldo a pagar{% else %}Valor a pagar{% endif %}" 
-        class="input input-bordered {% if sale.balance <= 0 %}input-disabled{% endif %}"
-        id="pay-amount-input"
-        {% if sale.balance > 0 %}max="{{ sale.balance }}"{% endif %}
-        {% if sale.balance > 0 %}
-        oninput="
-          const errorDiv = document.getElementById('pay-error-message');
-          if (errorDiv) errorDiv.classList.add('hidden');
-          const amount = parseFloat(this.value) || 0;
-          const balance = parseFloat('{{ sale.balance }}');
-          if (amount > balance) {
-            const errorDiv = document.getElementById('pay-error-message');
-            const errorText = document.getElementById('pay-error-text');
-            if (errorDiv && errorText) {
-              errorText.textContent = 'O valor informado (R$ ' + amount.toFixed(2) + ') é maior que o saldo devido (R$ ' + balance.toFixed(2) + ').';
-              errorDiv.classList.remove('hidden');
-            }
-          }
-        "
-        {% endif %}>
+
+      <input type="number" name="amount" step="0.01"
+        placeholder="{{ sale.balance <= 0|yesno:'Não há saldo a pagar,Valor a pagar' }}"
+        class="input input-bordered {{ sale.balance <= 0|yesno:'input-disabled,' }}" :disabled="balance <= 0"
+        :max="balance" x-model="amount" @input="clearError(); checkLimit()">
+
       <select name="method" class="select select-bordered">
         <option value="pix">PIX</option>
         <option value="cash">Dinheiro</option>
         <option value="card">Cartão</option>
+        {% if sale.client_id %}
         <option value="fiado">Conta do Cliente</option>
+        {% endif %}
       </select>
+
       <input type="text" name="note" placeholder="Observação (opcional)" class="input input-bordered">
 
       <div class="flex justify-between items-center gap-2 mt-2">
-        {% if sale.balance < 0 %}
-        <h3 class="font-extrabold text-lg text-yellow-600">
+
+        {% if sale.balance < 0 %} <h3 class="font-extrabold text-lg text-yellow-600">
           Crédito: R$ {{ sale.credit_amount|floatformat:2 }}
-        </h3>
-        <div class="flex gap-2">
-          <button type="button" class="btn btn-outline btn-error"
-            onclick="document.getElementById('pay-modal').close()">Cancelar</button>
-          <button type="button" class="btn btn-success text-white" disabled>
-            Não é possível pagar (há crédito)
-          </button>
-        </div>
-        {% else %}
-        <h3 class="font-extrabold text-lg text-green-700">
-          Saldo: R$ {{ sale.balance|floatformat:2 }}
-        </h3>
-        <div class="flex gap-2">
-          <button type="button" class="btn btn-outline btn-error"
-            onclick="document.getElementById('pay-modal').close()">Cancelar</button>
-          <button type="submit" class="btn btn-success text-white">Registrar</button>
-        </div>
-        {% endif %}
+          </h3>
+          <div class="flex gap-2">
+            <button type="button" class="btn btn-outline btn-error"
+              @click="$el.closest('dialog').close()">Cancelar</button>
+            <button type="button" class="btn btn-success text-white" disabled>Não é possível pagar</button>
+          </div>
+          {% else %}
+          <h3 class="font-extrabold text-lg text-green-700">
+            Saldo: R$ {{ sale.balance|floatformat:2 }}
+          </h3>
+          <div class="flex gap-2">
+            <button type="button" class="btn btn-outline btn-error"
+              @click="$el.closest('dialog').close()">Cancelar</button>
+            <button type="submit" class="btn btn-success text-white">Registrar</button>
+          </div>
+          {% endif %}
+
       </div>
     </form>
   </div>
-  <form method="dialog" class="modal-backdrop"><button>Fechar</button></form>
+
+  <form method="dialog" class="modal-backdrop">
+    <button>Fechar</button>
+  </form>
 </dialog>
 
+<script>
+  function payModal(balance) {
+    return {
+      balance: parseFloat(balance),
+      amount: 0,
+      error: '',
+
+      clearError() {
+        this.error = ''
+      },
+
+      setError(msg) {
+        this.error = msg
+        setTimeout(() => {
+          const el = document.querySelector('#pay-modal .alert-error');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50)
+      },
+
+      checkLimit() {
+        if (this.amount > this.balance) {
+          this.setError(`O valor informado (R$ ${this.amount.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`)
+        }
+      },
+
+      validateBeforeSubmit(e) {
+        if (this.amount > this.balance) {
+          this.setError(`O valor informado (R$ ${this.amount.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`)
+          return
+        }
+        if (this.balance <= 0) {
+          this.setError("Não é possível registrar pagamento quando o saldo é zero ou negativo.")
+          return
+        }
+        e.target.submit()
+      },
+
+      handleHTMXError(event) {
+        if (event.detail?.xhr?.responseText) {
+          this.setError(event.detail.xhr.responseText.trim())
+        }
+      }
+    }
+  }
+</script>
