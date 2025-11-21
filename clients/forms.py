@@ -19,5 +19,5 @@ class ClientForm(forms.ModelForm):
                     }
                 )
         if self.instance and self.instance.pk:
-          if 'client_debts' in self.fields:
-              del self.fields['client_debts']
+            if 'client_debts' in self.fields:
+                del self.fields['client_debts']
