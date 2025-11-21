@@ -76,7 +76,10 @@
             class="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition">
             Cobrar
           </button>
-
+          <button hx-get="{% url 'client_edit' client.client_id %}" hx-target="body" hx-swap="beforeend"
+            class="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition">
+            Editar
+          </button>
         </div>
 
       </div>

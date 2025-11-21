@@ -18,3 +18,6 @@ class ClientForm(forms.ModelForm):
                         'class': 'file-input file-input-bordered w-full text-white bg-green-800 border-green-800'
                     }
                 )
+        if self.instance and self.instance.pk:
+          if 'client_debts' in self.fields:
+              del self.fields['client_debts']
