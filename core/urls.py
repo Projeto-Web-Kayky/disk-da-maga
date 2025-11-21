@@ -6,12 +6,12 @@ from django.conf.urls.static import static
 from accounts.views import login_view
 
 urlpatterns = [
-    path("base/", views.base_view, name="base_view"),
-    path("admin/", admin.site.urls),
-    path("", login_view, name="login"),
-    path("", include("accounts.urls")),
-    path("products/", include("products.urls")),
-    path("clients/", include("clients.urls")),
-    path("sales/", include("sales.urls")),
-    path("dashboard/", include("dashboard.urls")),
+    path('base/', views.base_view, name='base_view'),
+    path('admin/', admin.site.urls),
+    path('', login_view, name='login'),
+    path('', include('accounts.urls')),
+    path('products/', include('products.urls')),
+    path('clients/', include('clients.urls')),
+    path('sales/', include('sales.urls')),
+    path('dashboard/', include('dashboard.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
