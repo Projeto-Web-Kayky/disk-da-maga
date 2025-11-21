@@ -20,9 +20,7 @@ def login_view(request):
                 return redirect('product_list')
             else:
                 messages.error(request, 'Usuário ou senha inválidos.')
-        # Se o formulário não for válido, os erros serão exibidos automaticamente
-        # pelos campos do formulário no template
-    
+
     return render(request, 'login.html', {'form': form})
 
 

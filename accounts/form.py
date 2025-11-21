@@ -7,12 +7,15 @@ class LoginForm(forms.Form):
         required=True,
         label='Usuário',
         widget=forms.TextInput(
-            attrs={'class': 'form-control', 'placeholder': 'Digite seu usuário'}
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Digite seu usuário',
+            }
         ),
         error_messages={
             'required': 'Este campo é obrigatório.',
             'max_length': 'O nome de usuário é muito longo.',
-        }
+        },
     )
     password = forms.CharField(
         required=True,
@@ -22,5 +25,5 @@ class LoginForm(forms.Form):
         ),
         error_messages={
             'required': 'Este campo é obrigatório.',
-        }
+        },
     )

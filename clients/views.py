@@ -31,7 +31,9 @@ def client_list(request):
 def client_detail(request, client_id):
     """Render client detail modal fragment."""
     client = get_object_or_404(Client, pk=client_id)
-    return render(request, 'partials/client_detail_modal.html', {'client': client})
+    return render(
+        request, 'partials/client_detail_modal.html', {'client': client}
+    )
 
 
 @login_required
@@ -51,5 +53,7 @@ def client_delete(request, client_id):
     # Respond with an HX-Trigger header so the frontend can remove the
     # client row from the DOM and close the modal without a full reload.
     response = HttpResponse(status=200)
-    response['HX-Trigger'] = json.dumps({'clientDeleted': {'clientId': client_id}})
+    response['HX-Trigger'] = json.dumps(
+        {'clientDeleted': {'clientId': client_id}}
+    )
     return response

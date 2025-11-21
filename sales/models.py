@@ -49,7 +49,7 @@ class Sale(models.Model):
     @property
     def balance(self):
         return (self.total - self.paid_amount).quantize(Decimal('0.01'))
-    
+
     @property
     def credit_amount(self):
         """Retorna o valor do crédito (saldo negativo) como valor positivo"""
@@ -62,42 +62,45 @@ class Sale(models.Model):
     def update_client_debt_cache(self):
         """
         Recalcula e atualiza a dívida do cliente.
-        
+
         A dívida do cliente é SIMPLESMENTE a soma de todos os pagamentos fiados
         que ele fez em TODAS as vendas (abertas e finalizadas).
-        
+
         Pagamentos fiados são dívidas que o cliente deve pagar depois.
         Não importa se a venda está aberta ou finalizada, o pagamento fiado
         sempre aumenta a dívida do cliente.
-        
+
         Exemplo:
         - Venda de 7 reais
         - Pagamento de 6 reais no PIX (não-fiado) - não afeta a dívida
         - Pagamento de 1 real fiado (conta do cliente) - aumenta a dívida em 1
         - Dívida = 1 real (apenas o pagamento fiado)
-        
+
         IMPORTANTE: Este método SEMPRE recalcula do zero, substituindo o valor atual.
         Isso garante que não há duplicação.
         """
         if not self.client:
             return
-        
+
         Payment = self.payments.model
-        
+
         # Calcular APENAS a soma de todos os pagamentos fiados
         # Pagamentos fiados são dívidas que o cliente deve pagar
         # Não importa o status da venda, pagamentos fiados sempre aumentam a dívida
         pagamentos_fiado_total = Payment.objects.filter(
             sale__client=self.client
-        ).filter(method__iexact='fiado').aggregate(
-            total=Sum('amount')
-        )['total'] or Decimal('0.00')
-        
+        ).filter(method__iexact='fiado').aggregate(total=Sum('amount'))[
+            'total'
+        ] or Decimal(
+            '0.00'
+        )
+
         # A dívida do cliente é APENAS a soma dos pagamentos fiados
         divida_final = pagamentos_fiado_total.quantize(Decimal('0.01'))
-        
+
         # Atualizar a dívida do cliente (substitui o valor atual)
         from clients.models import Client
+
         Client.objects.filter(pk=self.client.pk).update(
             client_debts=divida_final
         )
@@ -107,7 +110,7 @@ class Sale(models.Model):
     def finalize_and_reserve_stock(self, skip_debt_update=False):
         """
         Finaliza a venda e reserva o estoque.
-        
+
         Args:
             skip_debt_update: Se True, não atualiza o cache da dívida do cliente.
                              Mantido para compatibilidade, mas não é mais necessário
@@ -159,49 +162,53 @@ class Sale(models.Model):
     def apply_payment(self, amount, method=None, note=None):
         if amount <= 0:
             raise ValueError('Valor do pagamento deve ser positivo.')
-        
+
         # Verificar se a venda está aberta antes de aplicar o pagamento
         if self.status != self.STATUS_OPEN:
-            raise ValueError('Não é possível aplicar pagamento em uma venda que não está aberta.')
-        
+            raise ValueError(
+                'Não é possível aplicar pagamento em uma venda que não está aberta.'
+            )
+
         with transaction.atomic():
             sale_locked = Sale.objects.select_for_update().get(pk=self.pk)
-            
+
             # Verificar novamente o status dentro da transação
             if sale_locked.status != self.STATUS_OPEN:
                 raise ValueError('Venda não está mais aberta.')
-            
+
             # Verificar se ainda há saldo a pagar
             current_balance = sale_locked.balance
             if current_balance <= 0:
                 if current_balance < 0:
-                    raise ValueError(f'Não é possível realizar pagamento. Há um crédito de R$ {abs(current_balance):.2f} nesta comanda.')
+                    raise ValueError(
+                        f'Não é possível realizar pagamento. Há um crédito de R$ {abs(current_balance):.2f} nesta comanda.'
+                    )
                 raise ValueError('Venda já está totalmente paga.')
-            
+
             if amount > current_balance:
                 raise ValueError(
                     f'O valor informado (R$ {amount:.2f}) é maior que o saldo devido (R$ {current_balance:.2f}).'
                 )
-            
+
             # Obter o modelo Payment antes de usá-lo
             Payment = sale_locked.payments.model
-            
+
             # Criar o pagamento
             Payment.objects.create(
                 sale=sale_locked, amount=amount, method=method, note=note
             )
-            
+
             # IMPORTANTE: NÃO adicionar manualmente pagamentos fiados à dívida
             # A dívida será recalculada do zero pelo update_client_debt_cache()
             # Isso garante que não há duplicação
-            
+
             # Recalcular o valor pago após criar o pagamento
             new_paid_amount = sale_locked.paid_amount
             sale_total = sale_locked.total
-            
+
             # Verificar se é pagamento fiado
             is_fiado = method and method.strip().lower() == 'fiado'
-            
+
             # Só finalizar se o valor pago for maior ou igual ao total (com tolerância para arredondamento)
             if new_paid_amount >= sale_total - Decimal('0.01'):
                 # Finalizar a venda

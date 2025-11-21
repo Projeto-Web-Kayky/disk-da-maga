@@ -79,7 +79,9 @@ def sale_detail(request, sale_id):
 def sale_header_fragment(request, sale_id):
     """Retorna apenas o fragmento do cabeçalho da venda"""
     sale = get_object_or_404(Sale, pk=sale_id)
-    return render(request, 'partials/sale_header_fragment.html', {'sale': sale})
+    return render(
+        request, 'partials/sale_header_fragment.html', {'sale': sale}
+    )
 
 
 def pay_modal_fragment(request, sale_id):
@@ -160,22 +162,24 @@ def remove_item(request, sale_id, item_id):
 @require_POST
 def pay_sale(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
-    
+
     # Verificar status antes de processar
     if sale.status != Sale.STATUS_OPEN:
         return HttpResponseBadRequest('Venda não está aberta.')
-    
+
     # Verificar se ainda há saldo a pagar
     balance = sale.balance
     if balance <= 0:
         if balance < 0:
-            return HttpResponseBadRequest(f'Não é possível realizar pagamento. Há um crédito de R$ {abs(balance):.2f} nesta comanda.')
+            return HttpResponseBadRequest(
+                f'Não é possível realizar pagamento. Há um crédito de R$ {abs(balance):.2f} nesta comanda.'
+            )
         return HttpResponseBadRequest('Venda já está totalmente paga.')
-    
+
     amount_raw = (request.POST.get('amount') or '').strip()
     method = (request.POST.get('method') or '').strip()
     note = (request.POST.get('note') or '').strip()
-    
+
     # Debug: verificar se o método está sendo recebido
     # print(f"DEBUG: Método recebido: '{method}', Tipo: {type(method)}")
 
@@ -183,10 +187,10 @@ def pay_sale(request, sale_id):
         amount = Decimal(amount_raw)
     except (InvalidOperation, TypeError):
         return HttpResponseBadRequest('Valor inválido.')
-    
+
     if amount <= 0:
         return HttpResponseBadRequest('Valor do pagamento deve ser positivo.')
-    
+
     if amount > balance:
         return HttpResponseBadRequest(
             f'O valor informado (R$ {amount:.2f}) é maior que o saldo devido (R$ {balance:.2f}).'
@@ -258,7 +262,11 @@ def cancel_sale(request, sale_id):
     except Exception as e:
         return HttpResponseBadRequest(str(e))
     products = Product.objects.filter(quantity__gt=0).order_by('name')
-    return render(request, 'partials/sale_detail_fragment.html', {'sale': sale, 'products': products})
+    return render(
+        request,
+        'partials/sale_detail_fragment.html',
+        {'sale': sale, 'products': products},
+    )
 
 
 @require_POST
@@ -269,7 +277,11 @@ def reopen_sale(request, sale_id):
     except Exception as e:
         return HttpResponseBadRequest(str(e))
     products = Product.objects.filter(quantity__gt=0).order_by('name')
-    return render(request, 'partials/sale_detail_fragment.html', {'sale': sale, 'products': products})
+    return render(
+        request,
+        'partials/sale_detail_fragment.html',
+        {'sale': sale, 'products': products},
+    )
 
 
 @require_POST

@@ -36,7 +36,9 @@ urlpatterns = [
     ),
     path('clients/', client_list, name='client_list'),
     path('clients/<int:client_id>/', client_detail, name='client_detail'),
-    path('clients/<int:client_id>/delete/', client_delete, name='client_delete'),
+    path(
+        'clients/<int:client_id>/delete/', client_delete, name='client_delete'
+    ),
     path('sales/', include('sales.urls')),
     path('dashboard/', include('dashboard.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
