@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseBadRequest
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, F
 from .models import Sale, SaleItem
 from products.models import Product
 from clients.models import Client
@@ -93,53 +93,71 @@ def pay_modal_fragment(request, sale_id):
 @require_POST
 def add_item(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
+
     if sale.status != Sale.STATUS_OPEN:
-        return HttpResponseBadRequest('Venda não está aberta.')
+        return HttpResponseBadRequest("Venda não está aberta.")
 
-    product_id = (request.POST.get('product_id') or '').strip()
-    quantity_raw = (request.POST.get('quantity') or '1').strip()
+    product_id = (request.POST.get("product_id") or "").strip()
+    quantity_raw = (request.POST.get("quantity") or "1").strip()
 
-    # validate product id
-    if not product_id or not product_id.isdigit():
-        return HttpResponseBadRequest('ID de produto inválido.')
+    # validações
+    if not product_id.isdigit():
+        return HttpResponseBadRequest("ID de produto inválido.")
 
     try:
         quantity = int(quantity_raw)
         if quantity <= 0:
-            return HttpResponseBadRequest('Quantidade inválida.')
+            return HttpResponseBadRequest("Quantidade inválida.")
     except ValueError:
-        return HttpResponseBadRequest('Quantidade inválida.')
-
-    # product PK in your model is product_id
-    try:
-        product = Product.objects.get(product_id=int(product_id))
-    except Product.DoesNotExist:
-        return HttpResponseBadRequest('Produto não encontrado.')
-
-    if product.quantity < quantity:
-        return HttpResponseBadRequest('Estoque insuficiente.')
+        return HttpResponseBadRequest("Quantidade inválida.")
 
     with transaction.atomic():
-        sale_item = sale.items.filter(product=product).first()
-        if sale_item:
-            sale_item.quantity += quantity
-            sale_item.save()
-        else:
 
-            SaleItem.objects.create(
+        # travar o produto para evitar double-update concorrente
+        try:
+            product = (
+                Product.objects.select_for_update()
+                .get(product_id=int(product_id))
+            )
+        except Product.DoesNotExist:
+            return HttpResponseBadRequest("Produto não encontrado.")
+
+        # estoque insuficiente — validação feita *depois* do lock
+        if product.quantity < quantity:
+            return HttpResponseBadRequest("Estoque insuficiente.")
+
+        # travar o sale_item para evitar corrida
+        sale_item = (
+            SaleItem.objects.select_for_update()
+            .filter(sale=sale, product=product)
+            .first()
+        )
+
+        if sale_item:
+            # incremento seguro usando F()
+            sale_item.quantity = F("quantity") + quantity
+            sale_item.save(update_fields=["quantity"])
+            sale_item.refresh_from_db()
+        else:
+            sale_item = SaleItem.objects.create(
                 sale=sale,
                 product=product,
                 quantity=quantity,
                 price=product.sale_price,
             )
-        # reduce stock safe-guard
-        product.quantity = max(product.quantity - quantity, 0)
-        product.save(update_fields=['quantity'])
+
+        # desconto seguro no estoque
+        product.quantity = F("quantity") - quantity
+        product.save(update_fields=["quantity"])
+        product.refresh_from_db()
 
     sale.refresh_from_db()
-    # return only the items fragment so HTMX replaces that block
-    return render(request, 'partials/sale_items_fragment.html', {'sale': sale})
 
+    return render(
+        request,
+        "partials/sale_items_fragment.html",
+        {"sale": sale}
+    )
 
 @require_POST
 def remove_item(request, sale_id, item_id):
