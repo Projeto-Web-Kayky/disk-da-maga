@@ -37,50 +37,53 @@ def client_detail(request, client_id):
 @login_required
 def client_edit(request, client_id):
     client = get_object_or_404(Client, pk=client_id)
+    is_htmx = request.headers.get("Hx-Request") == "true"
 
     if request.method == "POST":
         form = ClientForm(request.POST, request.FILES, instance=client)
+
         if form.is_valid():
             form.save()
-            if request.headers.get("Hx-Request") == "true":
-                response = HttpResponse(status=204)
-                response["HX-Refresh"] = "true"
-                return response
+
+            if is_htmx:
+                # 204 diz ao HTMX para não trocar o conteúdo,
+                # e HX-Refresh força reload (caso você realmente queira isso).
+                return HttpResponse(status=204, headers={"HX-Refresh": "true"})
+
             return redirect("client_list")
 
-        # inválido: re-render modal com status 422 (HTMX irá trocar o modal)
-        if request.headers.get("Hx-Request") == "true":
-            return render(
-                request,
-                "partials/client_edit_modal.html",
-                {"form": form, "client": client},
-                status=422,
-            )
+        # Form inválido → apenas renderizar com status correto
+        status_code = 422 if is_htmx else 200
+        return render(
+            request,
+            "partials/client_edit_modal.html",
+            {"form": form, "client": client},
+            status=status_code,
+        )
 
-    else:
-        form = ClientForm(instance=client)
-
+    # GET
+    form = ClientForm(instance=client)
     return render(
-        request, "partials/client_edit_modal.html", {"form": form, "client": client}
+        request, "partials/client_edit_modal.html",
+        {"form": form, "client": client}
     )
 
 
 @login_required
 @require_POST
 def client_delete(request, client_id):
-    """Delete a client and return a small response to trigger UI update.
-
-    This view is intended to be called via HTMX `hx-post` from the
-    client detail modal. On success it returns a small script that
-    reloads the page so the client list refreshes.
-    """
     client = get_object_or_404(Client, pk=client_id)
+
     try:
         client.delete()
     except Exception as e:
         return HttpResponseBadRequest(str(e))
-    # Respond with an HX-Trigger header so the frontend can remove the
-    # client row from the DOM and close the modal without a full reload.
-    response = HttpResponse(status=200)
-    response["HX-Trigger"] = json.dumps({"clientDeleted": {"clientId": client_id}})
-    return response
+
+    return HttpResponse(
+        status=200,
+        headers={
+            "HX-Trigger": json.dumps({
+                "clientDeleted": {"clientId": client_id}
+            })
+        }
+    )
