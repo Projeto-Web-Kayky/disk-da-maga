@@ -1,4 +1,5 @@
-<dialog id="pay-modal" class="modal" x-data="payModal({{ sale.balance|floatformat:2 }})">
+<dialog id="pay-modal" class="modal" x-data="payModal({{ sale.balance|floatformat:'2' }})">
+
   <div class="modal-box w-11/12 max-w-md border-green-500 bg-base-200 text-base-content">
 
     <h3 class="font-extrabold text-lg mb-4 text-green-700 flex items-center">
@@ -7,25 +8,27 @@
     </h3>
 
     <!-- Mensagem de erro -->
-    <div x-show="error" class="alert alert-error mb-3">
+    <div x-show="error" class="alert alert-error mb-3" x-transition>
       <span class="material-symbols-outlined">error</span>
       <span x-text="error"></span>
     </div>
 
-    <form hx-post="{% url 'pay_sale' sale.id %}" hx-target="#sale-items" hx-swap="innerHTML"
-      hx-on::response-error="handleHTMXError(event)" @submit.prevent="validateBeforeSubmit($event)" method="POST"
+    <form method="POST" hx-post="{% url 'pay_sale' sale.id %}" hx-target="#sale-items" hx-swap="innerHTML"
+      hx-on::response-error="handleHTMXError(event)" @submit.prevent="validateBeforeSubmit($event)"
       class="flex flex-col gap-3">
+
       {% csrf_token %}
 
-      <input type="number" name="amount" step="0.01"
-        placeholder="{{ sale.balance <= 0|yesno:'Não há saldo a pagar,Valor a pagar' }}"
-        class="input input-bordered {{ sale.balance <= 0|yesno:'input-disabled,' }}" :disabled="balance <= 0"
-        :max="balance" x-model="amount" @input="clearError(); checkLimit()">
+      <input type="number" step="0.01" name="amount"
+        placeholder="{% if sale.balance <= 0 %}Não há saldo a pagar{% else %}Valor a pagar{% endif %}"
+        class="input input-bordered {% if sale.balance <= 0 %}input-disabled{% endif %}" :disabled="balance <= 0"
+        :max="balance" x-model.number="amount" @input="clearError(); checkLimit()">
 
       <select name="method" class="select select-bordered">
         <option value="pix">PIX</option>
         <option value="cash">Dinheiro</option>
         <option value="card">Cartão</option>
+
         {% if sale.client_id %}
         <option value="fiado">Conta do Cliente</option>
         {% endif %}
@@ -36,22 +39,33 @@
       <div class="flex justify-between items-center gap-2 mt-2">
 
         {% if sale.balance < 0 %} <h3 class="font-extrabold text-lg text-yellow-600">
-          Crédito: R$ {{ sale.credit_amount|floatformat:2 }}
+          Crédito: R$ {{ sale.credit_amount|floatformat:'2' }}
           </h3>
+
           <div class="flex gap-2">
-            <button type="button" class="btn btn-outline btn-error"
-              @click="$el.closest('dialog').close()">Cancelar</button>
-            <button type="button" class="btn btn-success text-white" disabled>Não é possível pagar</button>
+            <button type="button" class="btn btn-outline btn-error" @click="$el.closest('dialog').close()">
+              Cancelar
+            </button>
+
+            <button type="button" class="btn btn-success text-white" disabled>
+              Não é possível pagar
+            </button>
           </div>
+
           {% else %}
+
           <h3 class="font-extrabold text-lg text-green-700">
-            Saldo: R$ {{ sale.balance|floatformat:2 }}
+            Saldo: R$ {{ sale.balance|floatformat:'2' }}
           </h3>
+
           <div class="flex gap-2">
-            <button type="button" class="btn btn-outline btn-error"
-              @click="$el.closest('dialog').close()">Cancelar</button>
+            <button type="button" class="btn btn-outline btn-error" @click="$el.closest('dialog').close()">
+              Cancelar
+            </button>
+
             <button type="submit" class="btn btn-success text-white">Registrar</button>
           </div>
+
           {% endif %}
 
       </div>
@@ -75,34 +89,41 @@
       },
 
       setError(msg) {
-        this.error = msg
+        this.error = msg;
         setTimeout(() => {
-          const el = document.querySelector('#pay-modal .alert-error');
-          el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 50)
+          document.querySelector('#pay-modal .alert-error')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 30);
       },
 
       checkLimit() {
         if (this.amount > this.balance) {
-          this.setError(`O valor informado (R$ ${this.amount.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`)
+          this.setError(
+            `O valor informado (R$ ${this.amount.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`
+          );
         }
       },
 
       validateBeforeSubmit(e) {
         if (this.amount > this.balance) {
-          this.setError(`O valor informado (R$ ${this.amount.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`)
-          return
+          this.setError(
+            `O valor informado (R$ ${this.amount.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`
+          );
+          return;
         }
+
         if (this.balance <= 0) {
-          this.setError("Não é possível registrar pagamento quando o saldo é zero ou negativo.")
-          return
+          this.setError("Não é possível registrar pagamento quando o saldo é zero ou negativo.");
+          return;
         }
-        e.target.submit()
+
+        // Submete o formulário normalmente
+        e.target.submit();
       },
 
       handleHTMXError(event) {
         if (event.detail?.xhr?.responseText) {
-          this.setError(event.detail.xhr.responseText.trim())
+          this.setError(event.detail.xhr.responseText.trim());
         }
       }
     }
