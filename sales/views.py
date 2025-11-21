@@ -59,7 +59,7 @@ def _get_header_color_for_sale(sale):
 def sale_detail(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
     header_color = _get_header_color_for_sale(sale)
-    # always provide products so modal includes have data
+
     products = Product.objects.filter(quantity__gt=0).order_by('name')
 
     context = {
@@ -69,7 +69,6 @@ def sale_detail(request, sale_id):
         'section_name': 'Detalhes Da Comanda',
     }
 
-    # If HTMX asks for a fragment, render the fragment with full context
     if request.headers.get('HX-Request') == 'true':
         return render(request, 'partials/sale_detail_fragment.html', context)
 
@@ -77,7 +76,6 @@ def sale_detail(request, sale_id):
 
 
 def sale_header_fragment(request, sale_id):
-    """Retorna apenas o fragmento do cabeçalho da venda"""
     sale = get_object_or_404(Sale, pk=sale_id)
     return render(
         request, 'partials/sale_header_fragment.html', {'sale': sale}
@@ -85,7 +83,6 @@ def sale_header_fragment(request, sale_id):
 
 
 def pay_modal_fragment(request, sale_id):
-    """Retorna apenas o fragmento do modal de pagamento atualizado"""
     sale = get_object_or_404(Sale, pk=sale_id)
     return render(request, 'partials/modals/pay_modal.html', {'sale': sale})
 
@@ -95,38 +92,33 @@ def add_item(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
 
     if sale.status != Sale.STATUS_OPEN:
-        return HttpResponseBadRequest("Venda não está aberta.")
+        return HttpResponseBadRequest('Venda não está aberta.')
 
-    product_id = (request.POST.get("product_id") or "").strip()
-    quantity_raw = (request.POST.get("quantity") or "1").strip()
+    product_id = (request.POST.get('product_id') or '').strip()
+    quantity_raw = (request.POST.get('quantity') or '1').strip()
 
-    # validações
     if not product_id.isdigit():
-        return HttpResponseBadRequest("ID de produto inválido.")
+        return HttpResponseBadRequest('ID de produto inválido.')
 
     try:
         quantity = int(quantity_raw)
         if quantity <= 0:
-            return HttpResponseBadRequest("Quantidade inválida.")
+            return HttpResponseBadRequest('Quantidade inválida.')
     except ValueError:
-        return HttpResponseBadRequest("Quantidade inválida.")
+        return HttpResponseBadRequest('Quantidade inválida.')
 
     with transaction.atomic():
 
-        # travar o produto para evitar double-update concorrente
         try:
-            product = (
-                Product.objects.select_for_update()
-                .get(product_id=int(product_id))
+            product = Product.objects.select_for_update().get(
+                product_id=int(product_id)
             )
         except Product.DoesNotExist:
-            return HttpResponseBadRequest("Produto não encontrado.")
+            return HttpResponseBadRequest('Produto não encontrado.')
 
-        # estoque insuficiente — validação feita *depois* do lock
         if product.quantity < quantity:
-            return HttpResponseBadRequest("Estoque insuficiente.")
+            return HttpResponseBadRequest('Estoque insuficiente.')
 
-        # travar o sale_item para evitar corrida
         sale_item = (
             SaleItem.objects.select_for_update()
             .filter(sale=sale, product=product)
@@ -134,9 +126,8 @@ def add_item(request, sale_id):
         )
 
         if sale_item:
-            # incremento seguro usando F()
-            sale_item.quantity = F("quantity") + quantity
-            sale_item.save(update_fields=["quantity"])
+            sale_item.quantity = F('quantity') + quantity
+            sale_item.save(update_fields=['quantity'])
             sale_item.refresh_from_db()
         else:
             sale_item = SaleItem.objects.create(
@@ -146,18 +137,14 @@ def add_item(request, sale_id):
                 price=product.sale_price,
             )
 
-        # desconto seguro no estoque
-        product.quantity = F("quantity") - quantity
-        product.save(update_fields=["quantity"])
+        product.quantity = F('quantity') - quantity
+        product.save(update_fields=['quantity'])
         product.refresh_from_db()
 
     sale.refresh_from_db()
 
-    return render(
-        request,
-        "partials/sale_items_fragment.html",
-        {"sale": sale}
-    )
+    return render(request, 'partials/sale_items_fragment.html', {'sale': sale})
+
 
 @require_POST
 def remove_item(request, sale_id, item_id):
@@ -181,29 +168,26 @@ def remove_item(request, sale_id, item_id):
 def pay_sale(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
 
-    # Verificar status antes de processar
     if sale.status != Sale.STATUS_OPEN:
         return HttpResponseBadRequest('Venda não está aberta.')
 
-    # Verificar se ainda há saldo a pagar
     balance = sale.balance
+
     if balance <= 0:
-        if balance < 0:
-            return HttpResponseBadRequest(
-                f'Não é possível realizar pagamento. Há um crédito de R$ {abs(balance):.2f} nesta comanda.'
-            )
-        return HttpResponseBadRequest('Venda já está totalmente paga.')
+        msg = (
+            f'Não é possível realizar pagamento. Há um crédito de R$ {abs(balance):.2f} nesta comanda.'
+            if balance < 0
+            else 'Venda já está totalmente paga.'
+        )
+        return HttpResponseBadRequest(msg)
 
-    amount_raw = (request.POST.get('amount') or '').strip()
-    method = (request.POST.get('method') or '').strip()
-    note = (request.POST.get('note') or '').strip()
-
-    # Debug: verificar se o método está sendo recebido
-    # print(f"DEBUG: Método recebido: '{method}', Tipo: {type(method)}")
+    amount_raw = request.POST.get('amount', '').strip()
+    method = request.POST.get('method', '').strip()
+    note = request.POST.get('note', '').strip()
 
     try:
         amount = Decimal(amount_raw)
-    except (InvalidOperation, TypeError):
+    except InvalidOperation:
         return HttpResponseBadRequest('Valor inválido.')
 
     if amount <= 0:
@@ -215,13 +199,12 @@ def pay_sale(request, sale_id):
         )
 
     try:
-        # apply_payment já usa select_for_update internamente
         sale.apply_payment(amount, method=method, note=note)
-        sale.refresh_from_db()
     except ValueError as e:
         return HttpResponseBadRequest(str(e))
 
-    # Retornar os itens atualizados (como esperado pelo hx-target)
+    sale.refresh_from_db()
+
     return render(
         request,
         'partials/sale_items_fragment.html',
@@ -230,20 +213,15 @@ def pay_sale(request, sale_id):
 
 
 def pix_qr(request, sale_id):
-    """Render a simple PIX QR screen for the given sale.
-
-    This view builds a small payload (you can replace it with a real
-    PIX payload) and uses an external QR image generator to display
-    the QR code. The client-side JS opens this view in a new window
-    when the user selects PIX as the payment method.
-    """
     sale = get_object_or_404(Sale, pk=sale_id)
-    amount = (request.GET.get('amount') or '').strip()
+
+    amount = request.GET.get('amount', '').strip()
+    payload_parts = [f'PIX', f'sale:{sale.pk}']
 
     if amount:
-        payload = f'PIX|sale:{sale.pk}|amount:{amount}'
-    else:
-        payload = f'PIX|sale:{sale.pk}'
+        payload_parts.append(f'amount:{amount}')
+
+    payload = '|'.join(payload_parts)
 
     context = {
         'sale': sale,
@@ -307,7 +285,6 @@ def delete_sale(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
     with transaction.atomic():
         if sale.status == Sale.STATUS_FINALIZED:
-            # Return reserved stock before deleting
             for item in sale.items.select_related('product'):
                 item.product.quantity += item.quantity
                 item.product.save(update_fields=['quantity'])
