@@ -1,48 +1,62 @@
-<div id="sale-header-container">
-<div id="sale-header" class="flex justify-between items-center rounded-2xl p-6 shadow-md bg-red-800 text-white">
-  <div>
-    <h2 class="text-3xl font-extrabold"><span class="material-symbols-outlined">
-        contract
-      </span> Comanda #{{ sale.id }}</h2>
-    <p class="text-sm font-semibold text-gray-900">{% if sale.client %}
-      <label class="text-sm flex">Cliente: {{ sale.client.name }} </label>
-      {% else %}
-      <label class="text-white">Cliente sem nome</label>{% endif %}
-    </p>
+<div id="sale-header-container overflow-hidden">
+  <div id="sale-header"
+    class="flex flex-col md:flex-row justify-between items-start md:items-center rounded-2xl p-4 md:p-6 shadow-md bg-red-800 text-white gap-4 overflow-hidden">
 
-    <p class="text-sm">Status:
-      <span
-        class="font-semibold {% if sale.status == 'open' %}text-green-400{% elif sale.status == 'finalized' %}text-success{% else %}text-error{% endif %}">
-        {{ sale.get_status_display }}</span>
-    </p>
-    
-    {% if sale.status == 'open' %}
-    <p class="text-sm mt-1">
-      <span class="font-semibold">Total: R$ {{ sale.total|floatformat:2 }}</span>
-      {% if sale.paid_amount > 0 %}
-      | <span class="font-semibold">Pago: R$ {{ sale.paid_amount|floatformat:2 }}</span>
-      {% if sale.balance < 0 %}
-      | <span class="font-semibold text-yellow-400">Crédito: R$ {{ sale.credit_amount|floatformat:2 }}</span>
-      {% else %}
-      | <span class="font-semibold">Saldo: R$ {{ sale.balance|floatformat:2 }}</span>
-      {% endif %}
-      {% endif %}
-    </p>
-    {% endif %}
-  </div>
+    <div class="w-full md:flex-1 ">
+      <h2 class="text-2xl md:text-3xl font-extrabold overflow-hidden flex items-center gap-2">
+        <span class="material-symbols-outlined text-3xl">contract</span>
+        <span>Comanda #{{ sale.id }}</span>
+      </h2>
 
-  <div class="flex gap-2">
-    {% if sale.status == 'open' %}
-    <button id="btn-pay-modal" class="btn btn-success btn-sm text-white gap-[0px]"
-      data-modal="pay-modal">
-      <span class="material-symbols-outlined">attach_money</span>
-      Registrar Pagamento</button>
-    <button id="btn-add-item-modal" class="btn btn-warning btn-sm text-white"
-      data-modal="add-item-modal">+
-      Adicionar Item</button>
-    {% endif %}
-    <a href="{% url 'sale_list' %}" class="btn btn-sm">⬅ Voltar</a>
+      <p class="text-sm font-semibold text-gray-900 text-white mt-1">
+        {% if sale.client %}
+        <label class="text-sm flex text-white">Cliente: {{ sale.client.name }} </label>
+        {% else %}
+        <label class="text-white">Cliente sem nome</label>
+        {% endif %}
+      </p>
+
+      <p class="text-sm mt-1">Status:
+        <span
+          class="font-semibold {% if sale.status == 'open' %}text-green-400{% elif sale.status == 'finalized' %}text-success{% else %}text-error{% endif %}">
+          {{ sale.get_status_display }}
+        </span>
+      </p>
+
+      {% if sale.status == 'open' %}
+      <p class="text-sm mt-2 flex flex-wrap gap-x-2">
+        <span class="font-semibold">Total: R$ {{ sale.total|floatformat:2 }}</span>
+        {% if sale.paid_amount > 0 %}
+        <span class="hidden sm:inline">|</span> <span class="font-semibold">Pago: R$ {{ sale.paid_amount|floatformat:2
+          }}</span>
+        {% if sale.balance < 0 %} <span class="hidden sm:inline">|</span>
+          <span class="font-semibold text-yellow-400">Crédito: R$ {{ sale.credit_amount|floatformat:2 }}</span>
+          {% else %}
+          <span class="hidden sm:inline">|</span>
+          <span class="font-semibold">Saldo: R$ {{ sale.balance|floatformat:2 }}</span>
+          {% endif %}
+          {% endif %}
+      </p>
+      {% endif %}
+    </div>
+
+    <div class="flex gap-2 flex-wrap w-full md:w-auto justify-start md:justify-end">
+      {% if sale.status == 'open' %}
+      <button id="btn-pay-modal" class="btn btn-success btn-sm text-white gap-1 flex-grow md:flex-grow-0 wrap-anywhere"
+        data-modal="pay-modal">
+        <span class="material-symbols-outlined text-base">attach_money</span>
+        Pagamento
+      </button>
+
+      <button id="btn-add-item-modal" class="btn btn-warning btn-sm text-white flex-grow md:flex-grow-0"
+        data-modal="add-item-modal">
+        + Item
+      </button>
+      {% endif %}
+
+      <a href="{% url 'sale_list' %}" class="btn btn-sm flex-grow md:flex-grow-0 text-center">
+        ⬅ Voltar
+      </a>
+    </div>
   </div>
 </div>
-</div>
-
