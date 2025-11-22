@@ -126,20 +126,17 @@ def add_item(request, sale_id):
         )
 
         if sale_item:
-            sale_item.quantity = F('quantity') + quantity
-            sale_item.save(update_fields=['quantity'])
-            sale_item.refresh_from_db()
+            # Atualizar quantidade existente - o método save() do model vai gerenciar o estoque
+            sale_item.quantity += quantity
+            sale_item.save()
         else:
+            # Criar novo item - o método save() do model vai gerenciar o estoque
             sale_item = SaleItem.objects.create(
                 sale=sale,
                 product=product,
                 quantity=quantity,
                 price=product.sale_price,
             )
-
-        product.quantity = F('quantity') - quantity
-        product.save(update_fields=['quantity'])
-        product.refresh_from_db()
 
     sale.refresh_from_db()
 

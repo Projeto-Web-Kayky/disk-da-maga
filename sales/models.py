@@ -109,8 +109,8 @@ class Sale(models.Model):
 
     def finalize_and_reserve_stock(self, skip_debt_update=False):
         """
-        Finaliza a venda e reserva o estoque.
-
+        Finaliza a venda. O estoque já foi reservado quando os itens foram adicionados.
+        
         Args:
             skip_debt_update: Se True, não atualiza o cache da dívida do cliente.
                              Mantido para compatibilidade, mas não é mais necessário
@@ -120,15 +120,15 @@ class Sale(models.Model):
             return
         with transaction.atomic():
             sale_locked = Sale.objects.select_for_update().get(pk=self.pk)
+            # Verificar se há estoque suficiente (já foi reservado, mas verificar por segurança)
             for item in sale_locked.items.select_related('product'):
-                if item.product.quantity < item.quantity:
+                if item.product.quantity < 0:
                     raise ValueError(
-                        f'Estoque insuficiente para {item.product.name} '
-                        f'({item.product.quantity} disponível, {item.quantity} solicitado).'
+                        f'Estoque insuficiente para {item.product.name}. '
+                        f'A venda não pode ser finalizada.'
                     )
-            for item in sale_locked.items.select_related('product'):
-                item.product.quantity -= item.quantity
-                item.product.save(update_fields=['quantity'])
+            # Não subtrair estoque novamente - já foi subtraído quando os itens foram adicionados
+            # Apenas mudar o status para finalizada
             sale_locked.status = self.STATUS_FINALIZED
             sale_locked.save(update_fields=['status', 'updated_at'])
             # Sempre recalcular a dívida (não há mais duplicação pois recalculamos do zero)
@@ -150,11 +150,19 @@ class Sale(models.Model):
         if self.status not in [self.STATUS_CANCELLED, self.STATUS_FINALIZED]:
             return
         with transaction.atomic():
-            if self.status == self.STATUS_FINALIZED:
-                # Return reserved stock
+            if self.status == self.STATUS_CANCELLED:
+                # Se estava cancelada, o estoque já foi devolvido no cancel()
+                # Agora precisamos reservar novamente ao reabrir
                 for item in self.items.select_related('product'):
-                    item.product.quantity += item.quantity
+                    if item.product.quantity < item.quantity:
+                        raise ValueError(
+                            f'Estoque insuficiente para {item.product.name} '
+                            f'({item.product.quantity} disponível, {item.quantity} solicitado).'
+                        )
+                    item.product.quantity -= item.quantity
                     item.product.save(update_fields=['quantity'])
+            # Se estava finalizada, o estoque já está reservado, não precisa fazer nada
+            # Apenas mudar o status para aberta
             self.status = self.STATUS_OPEN
             self.save(update_fields=['status', 'updated_at'])
             self.update_client_debt_cache()

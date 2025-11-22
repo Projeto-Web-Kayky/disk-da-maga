@@ -13,8 +13,8 @@
       <span x-text="error"></span>
     </div>
 
-    <form method="POST" hx-post="{% url 'pay_sale' sale.id %}" hx-target="#sale-items" hx-swap="innerHTML"
-      hx-on::response-error="handleHTMXError(event)" @submit.prevent="validateBeforeSubmit($event)"
+    <form id="pay-form" method="POST" hx-post="{% url 'pay_sale' sale.id %}" hx-target="#sale-items" hx-swap="innerHTML"
+      hx-on::response-error="handleHTMXError(event)" @submit="validateBeforeSubmit($event)"
       class="flex flex-col gap-3">
 
       {% csrf_token %}
@@ -104,21 +104,68 @@
         }
       },
 
-      validateBeforeSubmit(e) {
+      async validateBeforeSubmit(e) {
         if (this.amount > this.balance) {
           this.setError(
             `O valor informado (R$ ${this.amount.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`
           );
-          return;
+          e.preventDefault();
+          return false;
         }
 
         if (this.balance <= 0) {
           this.setError("Não é possível registrar pagamento quando o saldo é zero ou negativo.");
-          return;
+          e.preventDefault();
+          return false;
         }
 
-        // Submete o formulário normalmente
-        e.target.submit();
+        // Verificar se é PIX - se for, mostrar QR code
+        const methodSelect = e.target.querySelector('select[name="method"]');
+        const method = methodSelect ? methodSelect.value : '';
+        
+        if (method === 'pix') {
+          e.preventDefault();
+          
+          // Buscar ou criar o dialog do PIX
+          let pixDialog = document.getElementById('pix-preview');
+          if (!pixDialog) {
+            pixDialog = document.createElement('dialog');
+            pixDialog.id = 'pix-preview';
+            pixDialog.className = 'modal';
+            document.body.appendChild(pixDialog);
+          }
+          
+          try {
+            const amount = this.amount || '';
+            const url = new URL("{% url 'sale_pix_qr' sale.id %}", window.location.origin);
+            if (amount) url.searchParams.set('amount', amount);
+            
+            const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!res.ok) throw new Error('Falha ao carregar QR');
+            const html = await res.text();
+            
+            pixDialog.innerHTML = html;
+            
+            pixDialog.querySelectorAll('[data-action="close"]').forEach(btn => {
+              btn.addEventListener('click', () => {
+                pixDialog.close();
+                e.target.dataset.skipQr = '1';
+                e.target.requestSubmit();
+              });
+            });
+            
+            if (typeof pixDialog.showModal === 'function') pixDialog.showModal();
+          } catch (err) {
+            console.error(err);
+            this.setError('Não foi possível carregar o QR. Tente novamente.');
+          }
+          
+          return false;
+        }
+
+        // Para outros métodos, submeter via HTMX normalmente
+        // Não prevenir - deixar HTMX processar
+        return true;
       },
 
       handleHTMXError(event) {
