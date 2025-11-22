@@ -23,7 +23,7 @@
                         {% endif %}
                     </div>
                     <div class="block">
-                        <span class="text-sm badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg">
+                        <span class="text-sm badge badge-soft badge-accent border-none text-white badge-lg {% if sale.status == 'open' %}bg-red-900 {% elif sale.status == 'finalized' %}bg-green-900 {% endif %}">
                             {%if sale.client %}
                             <label class="text-sm flex">Cliente: {{ sale.client.name }} </label>
                             {% else %}
@@ -31,10 +31,10 @@
                         </span>
                         <div class="text-sm my-[0.5em]">
                             <span
-                                class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Total:
+                                class="text-sm badge badge-soft badge-accent border-none text-white badge-lg {% if sale.status == 'open' %}bg-red-900 {% elif sale.status == 'finalized' %}bg-green-900 {% endif %}">Total:
                                 R$ {{ sale.total }}</span>
                             <span
-                                class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Pago:
+                                class="text-sm badge badge-soft badge-accent border-none text-white badge-lg {% if sale.status == 'open' %}bg-red-900 {% elif sale.status == 'finalized' %}bg-green-900 {% endif %}">Pago:
                                 R$ {{ sale.paid_amount }} </span>
                             {% if sale.balance < 0 %}
                             <span
@@ -42,7 +42,7 @@
                                 R$ {{ sale.credit_amount|floatformat:2 }}</span>
                             {% else %}
                             <span
-                                class="badge badge-soft badge-accent bg-red-900 border-none text-white badge-lg text-sm">Saldo:
+                                class="text-sm badge badge-soft badge-accent border-none text-white badge-lg {% if sale.status == 'open' %}bg-red-900 {% elif sale.status == 'finalized' %}bg-green-900 {% endif %}">Saldo:
                                 R$ {{ sale.balance|floatformat:2 }}</span>
                             {% endif %}
                         </div>

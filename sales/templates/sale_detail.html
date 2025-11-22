@@ -2,27 +2,31 @@
 {% block title %}Comanda #{{ sale.id }}{% endblock %}
 {% block content %}
 
-<div class="p-6 max-w-6xl mx-auto space-y-8">
+<div class="p-4 md:p-6 max-w-6xl mx-auto space-y-4 md:space-y-8">
 
-  <!-- Cabeçalho -->
-  {% include 'partials/sale_header_fragment.html' %}
+  <div id="sale-header-container">
+    {% include 'partials/sale_header_fragment.html' %}
+  </div>
 
-  <!-- Itens -->
-  <div class="card bg-base-100 shadow-md border border-gray-200">
-    <div class="card-body">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-semibold flex items-center"><span class="material-symbols-outlined">
-            shopping_cart
-          </span> Itens da Comanda</h3>
+  <div class="card bg-base-100 shadow-md border border-gray-200 overflow-hidden">
+    <div class="card-body !p-4 md:!p-8">
+
+      <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+        <h3 class="text-lg font-semibold flex items-center gap-2">
+          <span class="material-symbols-outlined">shopping_cart</span>
+          Itens da Comanda
+        </h3>
         {% if sale.status == 'open' %}
-        <button class="btn btn-xs border-none bg-red-800 text-white btn-sm hover:bg-red-900" data-modal="add-item-modal">+
-          Adicionar</button>
+        <button class="btn btn-sm btn-error text-white border-none bg-red-800 hover:bg-red-900"
+          data-modal="add-item-modal">
+          <span class="text-lg font-bold">+</span> Adicionar
+        </button>
         {% endif %}
       </div>
 
-      <div class="divider"></div>
+      <div class="divider my-2"></div>
 
-      <div id="sale-items">
+      <div id="sale-items" class="overflow-x-auto">
         {% include 'partials/sale_items_fragment.html' %}
       </div>
     </div>
@@ -30,223 +34,200 @@
 
 </div>
 
-<!-- Modais (fora do container principal para não serem afetados por atualizações HTMX) -->
 <div id="modals-container">
   {% include 'partials/modals/add_item_modal.html' %}
   {% include 'partials/modals/pay_modal.html' %}
 </div>
 
 <script>
-// Função para recarregar o modal de adicionar item
-function reloadAddItemModal() {
-  const modal = document.getElementById('add-item-modal');
-  if (!modal) return;
-  
-  const searchInput = modal.querySelector('input[name="search"]');
-  const resultsContainer = modal.querySelector('#product-search-results');
-  
-  if (searchInput && resultsContainer) {
-    // Limpar campo de busca
-    searchInput.value = '';
-    // Recarregar lista de produtos
-    htmx.ajax('GET', "{% url 'search_products' sale.id %}", {
-      target: '#product-search-results',
-      swap: 'innerHTML'
-    });
-  }
-}
+  // MANTIVE O SCRIPT ORIGINAL INTACTO POIS A LÓGICA ESTÁ CORRETA
+  // Função para recarregar o modal de adicionar item
+  function reloadAddItemModal() {
+    const modal = document.getElementById('add-item-modal');
+    if (!modal) return;
 
-// Event delegation para garantir que os botões funcionem mesmo após atualizações HTMX
-let modalButtonHandler = function(e) {
-  const button = e.target.closest('button[data-modal]');
-  if (button) {
-    const modalId = button.getAttribute('data-modal');
-    const modal = document.getElementById(modalId);
-    if (modal && typeof modal.showModal === 'function') {
-      modal.showModal();
-      // Se for o modal de adicionar item, recarregar conteúdo
-      if (modalId === 'add-item-modal') {
-        setTimeout(function() {
-          reloadAddItemModal();
-          reinitSearchInput();
-        }, 100);
-      }
-    }
-  }
-};
+    const searchInput = modal.querySelector('input[name="search"]');
+    const resultsContainer = modal.querySelector('#product-search-results');
 
-document.addEventListener('click', modalButtonHandler);
-
-// Inicializar formulário de pagamento
-function initPayForm() {
-  const payForm = document.getElementById('pay-form');
-  if (!payForm || payForm.dataset.initialized === 'true') return;
-  
-  payForm.dataset.initialized = 'true';
-  const methodSelect = payForm.querySelector('select[name="method"]');
-  const amountInput = payForm.querySelector('input[name="amount"]');
-  
-  // Limpar mensagem de erro quando o modal for atualizado
-  const errorDiv = document.getElementById('pay-error-message');
-  if (errorDiv) {
-    errorDiv.classList.add('hidden');
-  }
-  
-  let pixDialog = document.getElementById('pix-preview');
-  if (!pixDialog) {
-    pixDialog = document.createElement('dialog');
-    pixDialog.id = 'pix-preview';
-    pixDialog.className = 'modal';
-    document.body.appendChild(pixDialog);
-  }
-  
-  payForm.addEventListener('submit', async function (e) {
-    if (payForm.dataset.skipQr === '1') {
-      delete payForm.dataset.skipQr;
-      return;
-    }
-    
-    // Verificar se o valor é válido antes de processar PIX
-    const amount = parseFloat(amountInput.value) || 0;
-    const balance = parseFloat(amountInput.getAttribute('max') || '0');
-    if (amount > balance) {
-      e.preventDefault();
-      const errorDiv = document.getElementById('pay-error-message');
-      const errorText = document.getElementById('pay-error-text');
-      if (errorDiv && errorText) {
-        errorText.textContent = 'O valor informado (R$ ' + amount.toFixed(2) + ') é maior que o saldo devido (R$ ' + balance.toFixed(2) + ').';
-        errorDiv.classList.remove('hidden');
-        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-      return;
-    }
-    
-    const method = (methodSelect && methodSelect.value) || '';
-    if (method !== 'pix') {
-      return;
-    }
-    
-    e.preventDefault();
-    try {
-      const amount = (amountInput && amountInput.value) ? amountInput.value : '';
-      const url = new URL("{% url 'sale_pix_qr' sale.id %}", window.location.origin);
-      if (amount) url.searchParams.set('amount', amount);
-      
-      const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-      if (!res.ok) throw new Error('Falha ao carregar QR');
-      const html = await res.text();
-      
-      pixDialog.innerHTML = html;
-      
-      pixDialog.querySelectorAll('[data-action="close"]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          pixDialog.close();
-          payForm.dataset.skipQr = '1';
-          payForm.requestSubmit();
-        });
+    if (searchInput && resultsContainer) {
+      searchInput.value = '';
+      htmx.ajax('GET', "{% url 'search_products' sale.id %}", {
+        target: '#product-search-results',
+        swap: 'innerHTML'
       });
-      
-      if (typeof pixDialog.showModal === 'function') pixDialog.showModal();
-    } catch (err) {
-      console.error(err);
-      alert('Não foi possível carregar o QR. Tente novamente.');
     }
-  });
-}
-
-// Inicializar quando a página carregar
-document.addEventListener('DOMContentLoaded', initPayForm);
-
-// Função para reinicializar campo de busca do modal
-function reinitSearchInput() {
-  const searchInput = document.querySelector('#add-item-modal input[name="search"]');
-  if (searchInput) {
-    // Processar novamente com HTMX para garantir que funcione
-    htmx.process(searchInput);
-    // Limpar flag para permitir reprocessamento se necessário
-    delete searchInput.dataset.htmxInitialized;
   }
-}
 
-// Re-inicializar após atualizações HTMX
-document.body.addEventListener('htmx:afterSwap', function(event) {
-  initPayForm();
-  
-  // Se os itens foram atualizados (após pagamento ou adicionar item)
-  if (event.target.id === 'sale-items' || event.target.closest('#sale-items')) {
-    // Atualizar o cabeçalho com os novos valores
-    htmx.ajax('GET', "{% url 'sale_header_fragment' sale.id %}", {
-      target: '#sale-header-container',
-      swap: 'innerHTML'
-    });
-    
-    // Atualizar o modal de pagamento para refletir o novo saldo
-    setTimeout(function() {
-      htmx.ajax('GET', "{% url 'pay_modal_fragment' sale.id %}", {
-        target: '#pay-modal',
-        swap: 'outerHTML',
-        onSuccess: function() {
-          // Re-inicializar o formulário de pagamento
-          setTimeout(function() {
-            if (typeof initPayForm === 'function') {
-              const payForm = document.getElementById('pay-form');
-              if (payForm) {
-                payForm.dataset.initialized = 'false';
-                // Limpar mensagem de erro ao atualizar o modal
-                const errorDiv = document.getElementById('pay-error-message');
-                if (errorDiv) errorDiv.classList.add('hidden');
-              }
-              initPayForm();
-            }
+  let modalButtonHandler = function (e) {
+    const button = e.target.closest('button[data-modal]');
+    if (button) {
+      const modalId = button.getAttribute('data-modal');
+      const modal = document.getElementById(modalId);
+      if (modal && typeof modal.showModal === 'function') {
+        modal.showModal();
+        if (modalId === 'add-item-modal') {
+          setTimeout(function () {
+            reloadAddItemModal();
+            reinitSearchInput();
           }, 100);
         }
-      });
-    }, 200);
-    
-    // Atualizar lista de produtos no modal de adicionar item (se estiver aberto)
-    const searchInput = document.querySelector('#add-item-modal input[name="search"]');
-    if (searchInput) {
-      const currentQuery = searchInput.value || '';
-      setTimeout(function() {
-        if (currentQuery) {
-          htmx.ajax('GET', "{% url 'search_products' sale.id %}?search=" + encodeURIComponent(currentQuery), {
-            target: '#product-search-results',
-            swap: 'innerHTML'
-          });
-        } else {
-          htmx.ajax('GET', "{% url 'search_products' sale.id %}", {
-            target: '#product-search-results',
-            swap: 'innerHTML'
-          });
-        }
-      }, 250);
-    }
-    
-    // Garantir que os botões continuem funcionando
-    setTimeout(function() {
-      reinitSearchInput();
-    }, 100);
-  }
-  
-  // Se o modal foi atualizado, garantir que o campo de busca funcione
-  if (event.target.id === 'product-search-results' || event.target.closest('#add-item-modal')) {
-    setTimeout(reinitSearchInput, 100);
-  }
-});
-
-// Listener específico para quando o pagamento for realizado
-document.body.addEventListener('htmx:afterRequest', function(event) {
-  // Se foi uma requisição de pagamento bem-sucedida
-  if (event.detail.pathInfo && event.detail.pathInfo.requestPath.includes('/pay/')) {
-    if (event.detail.xhr.status === 200) {
-      // Fechar o modal
-      const payModal = document.getElementById('pay-modal');
-      if (payModal) {
-        payModal.close();
       }
     }
+  };
+
+  document.addEventListener('click', modalButtonHandler);
+
+  function initPayForm() {
+    const payForm = document.getElementById('pay-form');
+    if (!payForm || payForm.dataset.initialized === 'true') return;
+
+    payForm.dataset.initialized = 'true';
+    const methodSelect = payForm.querySelector('select[name="method"]');
+    const amountInput = payForm.querySelector('input[name="amount"]');
+
+    const errorDiv = document.getElementById('pay-error-message');
+    if (errorDiv) {
+      errorDiv.classList.add('hidden');
+    }
+
+    let pixDialog = document.getElementById('pix-preview');
+    if (!pixDialog) {
+      pixDialog = document.createElement('dialog');
+      pixDialog.id = 'pix-preview';
+      pixDialog.className = 'modal'; // DaisyUI modal class é responsiva por padrão
+      document.body.appendChild(pixDialog);
+    }
+
+    payForm.addEventListener('submit', async function (e) {
+      if (payForm.dataset.skipQr === '1') {
+        delete payForm.dataset.skipQr;
+        return;
+      }
+
+      const amount = parseFloat(amountInput.value) || 0;
+      const balance = parseFloat(amountInput.getAttribute('max') || '0');
+      if (amount > balance) {
+        e.preventDefault();
+        const errorDiv = document.getElementById('pay-error-message');
+        const errorText = document.getElementById('pay-error-text');
+        if (errorDiv && errorText) {
+          errorText.textContent = 'O valor informado (R$ ' + amount.toFixed(2) + ') é maior que o saldo devido (R$ ' + balance.toFixed(2) + ').';
+          errorDiv.classList.remove('hidden');
+          errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        return;
+      }
+
+      const method = (methodSelect && methodSelect.value) || '';
+      if (method !== 'pix') {
+        return;
+      }
+
+      e.preventDefault();
+      try {
+        const amount = (amountInput && amountInput.value) ? amountInput.value : '';
+        const url = new URL("{% url 'sale_pix_qr' sale.id %}", window.location.origin);
+        if (amount) url.searchParams.set('amount', amount);
+
+        const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!res.ok) throw new Error('Falha ao carregar QR');
+        const html = await res.text();
+
+        pixDialog.innerHTML = html;
+
+        pixDialog.querySelectorAll('[data-action="close"]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            pixDialog.close();
+            payForm.dataset.skipQr = '1';
+            payForm.requestSubmit();
+          });
+        });
+
+        if (typeof pixDialog.showModal === 'function') pixDialog.showModal();
+      } catch (err) {
+        console.error(err);
+        alert('Não foi possível carregar o QR. Tente novamente.');
+      }
+    });
   }
-});
+
+  document.addEventListener('DOMContentLoaded', initPayForm);
+
+  function reinitSearchInput() {
+    const searchInput = document.querySelector('#add-item-modal input[name="search"]');
+    if (searchInput) {
+      htmx.process(searchInput);
+      delete searchInput.dataset.htmxInitialized;
+    }
+  }
+
+  document.body.addEventListener('htmx:afterSwap', function (event) {
+    initPayForm();
+
+    if (event.target.id === 'sale-items' || event.target.closest('#sale-items')) {
+      htmx.ajax('GET', "{% url 'sale_header_fragment' sale.id %}", {
+        target: '#sale-header-container',
+        swap: 'innerHTML'
+      });
+
+      setTimeout(function () {
+        htmx.ajax('GET', "{% url 'pay_modal_fragment' sale.id %}", {
+          target: '#pay-modal',
+          swap: 'outerHTML',
+          onSuccess: function () {
+            setTimeout(function () {
+              if (typeof initPayForm === 'function') {
+                const payForm = document.getElementById('pay-form');
+                if (payForm) {
+                  payForm.dataset.initialized = 'false';
+                  const errorDiv = document.getElementById('pay-error-message');
+                  if (errorDiv) errorDiv.classList.add('hidden');
+                }
+                initPayForm();
+              }
+            }, 100);
+          }
+        });
+      }, 200);
+
+      const searchInput = document.querySelector('#add-item-modal input[name="search"]');
+      if (searchInput) {
+        const currentQuery = searchInput.value || '';
+        setTimeout(function () {
+          if (currentQuery) {
+            htmx.ajax('GET', "{% url 'search_products' sale.id %}?search=" + encodeURIComponent(currentQuery), {
+              target: '#product-search-results',
+              swap: 'innerHTML'
+            });
+          } else {
+            htmx.ajax('GET', "{% url 'search_products' sale.id %}", {
+              target: '#product-search-results',
+              swap: 'innerHTML'
+            });
+          }
+        }, 250);
+      }
+
+      setTimeout(function () {
+        reinitSearchInput();
+      }, 100);
+    }
+
+    if (event.target.id === 'product-search-results' || event.target.closest('#add-item-modal')) {
+      setTimeout(reinitSearchInput, 100);
+    }
+  });
+
+  document.body.addEventListener('htmx:afterRequest', function (event) {
+    if (event.detail.pathInfo && event.detail.pathInfo.requestPath.includes('/pay/')) {
+      if (event.detail.xhr.status === 200) {
+        const payModal = document.getElementById('pay-modal');
+        if (payModal) {
+          payModal.close();
+        }
+      }
+    }
+  });
 </script>
 
 {% endblock %}
