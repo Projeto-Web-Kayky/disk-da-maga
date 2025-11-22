@@ -16,6 +16,13 @@ class Client(models.Model):
         default=0.00,
         verbose_name='Dívidas do Cliente',
     )
+    initial_debt = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name='Dívida Inicial',
+        help_text='Dívida cadastrada manualmente ao criar o cliente (não vem de pagamentos fiados)',
+    )
     photo = models.ImageField(
         upload_to='client_photos/',
         verbose_name='Foto do Cliente',

@@ -1,6 +1,6 @@
 <div id="sale-payment">
     <h3 class="font-bold">Resumo</h3>
-    <p>Total: R$ {{ sale.total }}</p>
-    <p>Pago: R$ {{ sale.paid_amount }}</p>
-    <p>Saldo: R$ {{ sale.balance }}</p>
+    <p>Total: R$ {{ sale.total|floatformat:2 }}</p>
+    <p>Pago: R$ {{ sale.paid_amount|floatformat:2 }}</p>
+    <p>Saldo: R$ {{ sale.balance|floatformat:2 }}</p>
 </div>

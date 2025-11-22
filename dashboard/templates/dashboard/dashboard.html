@@ -685,6 +685,14 @@ document.getElementById('reportModal').addEventListener('click', function(e) {
         closeModal();
     }
 });
+
+// Atualizar dashboard quando dívidas forem quitadas
+document.body.addEventListener('refreshDashboard', function() {
+    // Recarregar a página do dashboard para atualizar os dados
+    if (window.location.pathname.includes('dashboard')) {
+        window.location.reload();
+    }
+});
 </script>
 
 {% endblock %}

@@ -131,11 +131,14 @@ def add_item(request, sale_id):
             sale_item.save()
         else:
             # Criar novo item - o método save() do model vai gerenciar o estoque
+            # Garantir que o preço tenha exatamente 2 casas decimais
+            from decimal import Decimal
+            price = Decimal(str(product.sale_price)).quantize(Decimal('0.01'))
             sale_item = SaleItem.objects.create(
                 sale=sale,
                 product=product,
                 quantity=quantity,
-                price=product.sale_price,
+                price=price,
             )
 
     sale.refresh_from_db()

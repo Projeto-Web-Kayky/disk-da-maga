@@ -1,5 +1,5 @@
 <!-- MODAL DETALHES DO CLIENTE -->
-<div x-data @close-detail.window="detailOpen = false">
+<div x-data @close-detail.window="detailOpen = false" @clientDeleted.window="detailOpen = false">
   <div x-data="{ detailOpen: true }" x-show="detailOpen" x-transition.opacity
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
     @click.self="$dispatch('close-detail')">
@@ -58,28 +58,97 @@
         </div>
 
         <!-- Botões -->
-        <div class="flex gap-3 mt-5">
-
-          <!-- Deletar -->
-          <form hx-post="{% url 'client_delete' client.client_id %}" hx-confirm="Confirma exclusão deste cliente?"
-            hx-swap="none" @htmx:afterOnLoad.window="$dispatch('close-detail')" class="flex-1">
-            {% csrf_token %}
-            <button type="submit"
-              class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition">
-              Deletar
+        <div class="flex flex-col gap-3 mt-5">
+          
+          <!-- Botão Quitar Dívidas (só aparece se houver dívida) -->
+          {% if client.client_debts > 0 %}
+          <div x-data="{ showQuitForm: false }" class="w-full">
+            <button type="button" @click="showQuitForm = true"
+              class="w-full py-2 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium transition flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-lg">payments</span>
+              Quitar Dívidas
             </button>
-          </form>
+            
+            <!-- Modal de Quitação -->
+            <div x-show="showQuitForm" x-transition.opacity
+              class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+              @click.self="showQuitForm = false">
+              <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                  <span class="material-symbols-outlined">payments</span>
+                  Quitar Dívidas de {{ client.name }}
+                </h3>
+                
+                <form hx-post="{% url 'client_clear_debts' client.client_id %}" 
+                  hx-target="#client-detail-container" 
+                  hx-swap="innerHTML"
+                  @htmx:after-swap="showQuitForm = false"
+                  class="space-y-4">
+                  {% csrf_token %}
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Valor a Quitar (R$)
+                    </label>
+                    <input type="number" 
+                      name="amount" 
+                      step="0.01" 
+                      min="0.01"
+                      max="{{ client.client_debts|floatformat:'2' }}"
+                      placeholder="Deixe vazio para quitar tudo (R$ {{ client.client_debts|floatformat:2 }})"
+                      class="input input-bordered w-full">
+                    <p class="text-xs text-gray-500 mt-1">
+                      <strong>Dívida total:</strong> R$ {{ client.client_debts|floatformat:2 }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                      <strong>Pagamentos fiados:</strong> R$ {{ total_fiado|floatformat:2 }}
+                      {% if client.initial_debt > 0 %}
+                      <br><strong>Dívida inicial:</strong> R$ {{ client.initial_debt|floatformat:2 }}
+                      {% endif %}
+                    </p>
+                  </div>
+                  
+                  <div class="flex gap-2">
+                    <button type="button" @click="showQuitForm = false"
+                      class="flex-1 btn btn-outline">
+                      Cancelar
+                    </button>
+                    <button type="submit"
+                      class="flex-1 btn bg-yellow-600 hover:bg-yellow-700 text-white">
+                      Quitar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endif %}
 
-          <!-- Cobrar -->
-          <button type="button"
-            onclick="console.log('LINK GERADO: ', 'https://wa.me/55{{ client.phone_number }}'); window.open('https://wa.me/55{{ client.phone_number }}', '_blank')"
-            class="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition">
-            Cobrar
-          </button>
-          <button hx-get="{% url 'client_edit' client.client_id %}" hx-target="body" hx-swap="beforeend"
-            class="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition">
-            Editar
-          </button>
+          <div class="flex gap-3">
+            <!-- Deletar -->
+            <form hx-post="{% url 'client_delete' client.client_id %}" hx-confirm="Confirma exclusão deste cliente?"
+              hx-swap="none" 
+              hx-trigger="submit"
+              @htmx:after-request.window="if (event.detail.xhr.status === 200) { $dispatch('close-detail'); }"
+              class="flex-1">
+              {% csrf_token %}
+              <button type="submit"
+                class="w-full py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition">
+                Deletar
+              </button>
+            </form>
+
+            <!-- Cobrar -->
+            <button type="button"
+              onclick="console.log('LINK GERADO: ', 'https://wa.me/55{{ client.phone_number }}'); window.open('https://wa.me/55{{ client.phone_number }}', '_blank')"
+              class="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition">
+              Cobrar
+            </button>
+            <button hx-get="{% url 'client_edit' client.client_id %}" hx-target="body" hx-swap="beforeend"
+              class="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition">
+              Editar
+            </button>
+          </div>
         </div>
 
       </div>

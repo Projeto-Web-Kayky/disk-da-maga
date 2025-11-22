@@ -39,12 +39,16 @@ class Sale(models.Model):
     @property
     def total(self):
         agg = self.items.aggregate(total=Sum(F('price') * F('quantity')))
-        return agg['total'] or Decimal('0.00')
+        total = agg['total'] or Decimal('0.00')
+        # Garantir que o total tenha exatamente 2 casas decimais
+        return total.quantize(Decimal('0.01'))
 
     @property
     def paid_amount(self):
         agg = self.payments.aggregate(total=Sum('amount'))
-        return agg['total'] or Decimal('0.00')
+        paid = agg['total'] or Decimal('0.00')
+        # Garantir que o valor pago tenha exatamente 2 casas decimais
+        return paid.quantize(Decimal('0.01'))
 
     @property
     def balance(self):
@@ -84,23 +88,44 @@ class Sale(models.Model):
 
         Payment = self.payments.model
 
-        # Calcular APENAS a soma de todos os pagamentos fiados
+        # Calcular APENAS a soma de todos os pagamentos fiados (não quitados)
         # Pagamentos fiados são dívidas que o cliente deve pagar
+        # Quando quitados, o método é alterado de "fiado" para "quitado", então não são mais contabilizados
         # Não importa o status da venda, pagamentos fiados sempre aumentam a dívida
-        pagamentos_fiado_total = Payment.objects.filter(
-            sale__client=self.client
-        ).filter(method__iexact='fiado').aggregate(total=Sum('amount'))[
-            'total'
-        ] or Decimal(
-            '0.00'
+        
+        # Buscar todos os pagamentos fiados do cliente (apenas método exatamente "fiado")
+        pagamentos_fiado = Payment.objects.filter(
+            sale__client=self.client,
+            method__iexact='fiado'
         )
+        
+        # Calcular a soma dos valores dos pagamentos fiados
+        # Garantir que valores pequenos (como 0.01) sejam contabilizados corretamente
+        pagamentos_fiado_total_raw = pagamentos_fiado.aggregate(
+            total=Sum('amount')
+        )['total']
+        
+        # Converter para Decimal e garantir que valores pequenos sejam preservados
+        if pagamentos_fiado_total_raw is None:
+            pagamentos_fiado_total = Decimal('0.00')
+        else:
+            # Garantir que seja Decimal e quantizado para 2 casas decimais
+            pagamentos_fiado_total = Decimal(str(pagamentos_fiado_total_raw)).quantize(Decimal('0.01'))
 
-        # A dívida do cliente é APENAS a soma dos pagamentos fiados
-        divida_final = pagamentos_fiado_total.quantize(Decimal('0.01'))
-
-        # Atualizar a dívida do cliente (substitui o valor atual)
+        # IMPORTANTE: Preservar dívidas iniciais cadastradas manualmente
+        # A dívida total = dívida inicial (campo initial_debt) + pagamentos fiados
         from clients.models import Client
+        
+        # Buscar o cliente atual para obter a dívida inicial
+        client_atual = Client.objects.get(pk=self.client.pk)
+        divida_inicial = client_atual.initial_debt or Decimal('0.00')
+        
+        # A dívida final é a soma da dívida inicial + pagamentos fiados
+        # Isso garante que dívidas iniciais cadastradas manualmente sejam preservadas
+        # IMPORTANTE: Incluir TODOS os centavos, mesmo 0.01
+        divida_final = (divida_inicial + pagamentos_fiado_total).quantize(Decimal('0.01'))
 
+        # Atualizar a dívida do cliente
         Client.objects.filter(pk=self.client.pk).update(
             client_debts=divida_final
         )
@@ -201,24 +226,31 @@ class Sale(models.Model):
             # Obter o modelo Payment antes de usá-lo
             Payment = sale_locked.payments.model
 
+            # Garantir que o amount seja quantizado para 2 casas decimais (incluindo centavos)
+            amount_quantized = Decimal(str(amount)).quantize(Decimal('0.01'))
+
             # Criar o pagamento
             Payment.objects.create(
-                sale=sale_locked, amount=amount, method=method, note=note
+                sale=sale_locked, amount=amount_quantized, method=method, note=note
             )
+
+            # IMPORTANTE: Recarregar a venda do banco para garantir que o pagamento foi salvo
+            sale_locked.refresh_from_db()
 
             # IMPORTANTE: NÃO adicionar manualmente pagamentos fiados à dívida
             # A dívida será recalculada do zero pelo update_client_debt_cache()
             # Isso garante que não há duplicação
 
-            # Recalcular o valor pago após criar o pagamento
-            new_paid_amount = sale_locked.paid_amount
-            sale_total = sale_locked.total
+            # Recalcular o valor pago e o saldo após criar o pagamento
+            sale_locked.refresh_from_db()
+            current_balance = sale_locked.balance
 
             # Verificar se é pagamento fiado
             is_fiado = method and method.strip().lower() == 'fiado'
 
-            # Só finalizar se o valor pago for maior ou igual ao total (com tolerância para arredondamento)
-            if new_paid_amount >= sale_total - Decimal('0.01'):
+            # Só finalizar se o saldo for zero ou negativo (tudo foi pago, incluindo centavos)
+            # Não usar tolerância - o saldo deve ser exatamente zero ou negativo
+            if current_balance <= Decimal('0.00'):
                 # Finalizar a venda
                 # Se o último pagamento foi fiado, a dívida já será recalculada no finalize
                 # Se não foi fiado, também será recalculada
@@ -227,6 +259,9 @@ class Sale(models.Model):
                 # Se não finalizou, recalcular a dívida apenas se o pagamento foi fiado
                 # Se foi pagamento não-fiado, não precisa recalcular (não afeta a dívida)
                 if is_fiado:
+                    # Garantir que o cliente está atualizado antes de calcular a dívida
+                    if sale_locked.client:
+                        sale_locked.client.refresh_from_db()
                     sale_locked.update_client_debt_cache()
 
 
@@ -243,9 +278,19 @@ class SaleItem(models.Model):
 
     def __str__(self):
         return f'{self.product.name} x {self.quantity}'
+    
+    @property
+    def subtotal(self):
+        """Calcula o subtotal do item (preço × quantidade) com precisão de centavos"""
+        subtotal = self.price * self.quantity
+        return subtotal.quantize(Decimal('0.01'))
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
+            # Garantir que o preço tenha exatamente 2 casas decimais
+            if self.price:
+                self.price = self.price.quantize(Decimal('0.01'))
+            
             creating = self.pk is None
             if not creating:
                 old = SaleItem.objects.select_for_update().get(pk=self.pk)

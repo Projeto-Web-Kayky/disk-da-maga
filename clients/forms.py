@@ -19,5 +19,6 @@ class ClientForm(forms.ModelForm):
                     }
                 )
         if self.instance and self.instance.pk:
+            # Na edição, remover campos que são calculados automaticamente
             if 'client_debts' in self.fields:
                 del self.fields['client_debts']

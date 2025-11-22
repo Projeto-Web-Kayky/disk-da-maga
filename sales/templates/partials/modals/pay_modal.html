@@ -1,4 +1,4 @@
-<dialog id="pay-modal" class="modal" x-data="payModal({{ sale.balance|floatformat:'2' }})">
+<dialog id="pay-modal" class="modal" data-balance="{{ sale.balance|stringformat:'f' }}" x-data="payModal()" x-init="initBalance()">
 
   <div class="modal-box w-11/12 max-w-md border-green-500 bg-base-200 text-base-content">
 
@@ -19,10 +19,24 @@
 
       {% csrf_token %}
 
-      <input type="number" step="0.01" name="amount"
-        placeholder="{% if sale.balance <= 0 %}Não há saldo a pagar{% else %}Valor a pagar{% endif %}"
-        class="input input-bordered {% if sale.balance <= 0 %}input-disabled{% endif %}" :disabled="balance <= 0"
-        :max="balance" x-model.number="amount" @input="clearError(); checkLimit()">
+      <div class="flex gap-2 items-center">
+        <input type="number" step="0.01" min="0.01" name="amount"
+          placeholder="{% if sale.balance <= 0 %}Não há saldo a pagar{% else %}Valor a pagar{% endif %}"
+          class="input input-bordered flex-1 {% if sale.balance <= 0 %}input-disabled{% endif %}" 
+          {% if sale.balance <= 0 %}disabled{% endif %}
+          :max="balance" 
+          x-model="amountStr" 
+          @input="clearError(); checkLimit(); updateAmount()" 
+          required>
+        {% if sale.balance > 0 %}
+        <button type="button" 
+          @click="fillBalance()" 
+          class="btn btn-outline btn-sm"
+          title="Preencher com o saldo total">
+          Total
+        </button>
+        {% endif %}
+      </div>
 
       <select name="method" class="select select-bordered">
         <option value="pix">PIX</option>
@@ -78,11 +92,67 @@
 </dialog>
 
 <script>
-  function payModal(balance) {
+  function payModal() {
+    // Obter o balance do atributo data do dialog
+    // Usar setTimeout para garantir que o DOM esteja pronto
+    let balanceNum = 0;
+    
+    // Tentar obter o valor imediatamente
+    const dialog = document.getElementById('pay-modal');
+    if (dialog) {
+      const balanceAttr = dialog.getAttribute('data-balance') || '0';
+      // Converter string para número, tratando vírgula como ponto decimal
+      let balanceStr = String(balanceAttr).replace(',', '.').replace(/\s/g, '').trim();
+      balanceNum = parseFloat(balanceStr);
+      if (isNaN(balanceNum)) {
+        balanceNum = 0;
+      }
+    }
+    
+    // Debug: verificar se o valor está correto
+    console.log('Balance inicializado:', balanceNum);
+    
     return {
-      balance: parseFloat(balance),
+      balance: balanceNum,
       amount: 0,
+      amountStr: '',
       error: '',
+      
+      initBalance() {
+        // Garantir que o balance seja atualizado quando o modal for aberto
+        const dialog = document.getElementById('pay-modal');
+        if (dialog) {
+          const balanceAttr = dialog.getAttribute('data-balance') || '0';
+          let balanceStr = String(balanceAttr).replace(',', '.').replace(/\s/g, '').trim();
+          const newBalance = parseFloat(balanceStr);
+          if (!isNaN(newBalance)) {
+            this.balance = newBalance;
+            console.log('Balance atualizado no init:', this.balance);
+          }
+        }
+      },
+
+      updateAmount() {
+        // Converter string para número, mantendo precisão decimal
+        const input = document.querySelector('#pay-modal input[name="amount"]');
+        if (input && input.value) {
+          const val = parseFloat(input.value);
+          if (!isNaN(val)) {
+            this.amount = val;
+          }
+        }
+      },
+
+      fillBalance() {
+        // Preencher o campo com o saldo total
+        const input = document.querySelector('#pay-modal input[name="amount"]');
+        if (input) {
+          input.value = this.balance.toFixed(2);
+          this.amountStr = this.balance.toFixed(2);
+          this.amount = this.balance;
+          this.clearError();
+        }
+      },
 
       clearError() {
         this.error = ''
@@ -97,17 +167,43 @@
       },
 
       checkLimit() {
-        if (this.amount > this.balance) {
+        // Obter o valor do input diretamente para garantir precisão com centavos
+        const amountInput = document.querySelector('#pay-modal input[name="amount"]');
+        const amountValue = amountInput && amountInput.value ? parseFloat(amountInput.value) : 0;
+        
+        if (isNaN(amountValue) || amountValue <= 0) {
+          // Não mostrar erro se o campo estiver vazio ou sendo digitado
+          if (amountInput && amountInput.value && amountInput.value.trim() !== '') {
+            this.setError("O valor do pagamento deve ser no mínimo R$ 0,01.");
+          } else {
+            this.clearError();
+          }
+        } else if (amountValue > 0 && amountValue < 0.01) {
+          this.setError("O valor do pagamento deve ser no mínimo R$ 0,01.");
+        } else if (amountValue > this.balance) {
           this.setError(
-            `O valor informado (R$ ${this.amount.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`
+            `O valor informado (R$ ${amountValue.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`
           );
+        } else {
+          this.clearError();
         }
       },
 
       async validateBeforeSubmit(e) {
-        if (this.amount > this.balance) {
+        // Obter o valor do input diretamente para garantir precisão com centavos
+        const amountInput = e.target.querySelector('input[name="amount"]');
+        const amountValue = amountInput && amountInput.value ? parseFloat(amountInput.value) : 0;
+        
+        // Validar se o valor é válido (maior ou igual a 0.01)
+        if (isNaN(amountValue) || amountValue < 0.01) {
+          this.setError("O valor do pagamento deve ser no mínimo R$ 0,01.");
+          e.preventDefault();
+          return false;
+        }
+
+        if (amountValue > this.balance) {
           this.setError(
-            `O valor informado (R$ ${this.amount.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`
+            `O valor informado (R$ ${amountValue.toFixed(2)}) é maior que o saldo devido (R$ ${this.balance.toFixed(2)})`
           );
           e.preventDefault();
           return false;
@@ -118,6 +214,9 @@
           e.preventDefault();
           return false;
         }
+        
+        // Atualizar o amount no modelo para garantir que está sincronizado
+        this.amount = amountValue;
 
         // Verificar se é PIX - se for, mostrar QR code
         const methodSelect = e.target.querySelector('select[name="method"]');
@@ -136,7 +235,9 @@
           }
           
           try {
-            const amount = this.amount || '';
+            // Usar o valor do input diretamente para garantir precisão com centavos
+            const amountInput = e.target.querySelector('input[name="amount"]');
+            const amount = amountInput ? amountInput.value : (this.amount || '');
             const url = new URL("{% url 'sale_pix_qr' sale.id %}", window.location.origin);
             if (amount) url.searchParams.set('amount', amount);
             

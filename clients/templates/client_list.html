@@ -98,4 +98,36 @@
     <div class="animate-spin border-4 border-gray-300 border-t-blue-600 rounded-full w-8 h-8"></div>
 </div>
 
+<script>
+// Atualizar lista de clientes quando dívida for quitada
+document.body.addEventListener('debtsCleared', function(event) {
+    // Recarregar a página para atualizar os dados
+    window.location.reload();
+});
+
+// Remover cliente da lista automaticamente quando deletado
+document.body.addEventListener('clientDeleted', function(event) {
+    const clientId = event.detail?.clientId;
+    if (clientId) {
+        // Encontrar e remover a linha da tabela
+        const clientRow = document.getElementById(`client-${clientId}`);
+        if (clientRow) {
+            // Adicionar animação de fade out antes de remover
+            clientRow.style.transition = 'opacity 0.3s ease-out';
+            clientRow.style.opacity = '0';
+            
+            setTimeout(() => {
+                clientRow.remove();
+                
+                // Verificar se não há mais clientes na tabela
+                const tbody = document.querySelector('tbody');
+                if (tbody && tbody.children.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-2 text-center text-gray-500">Nenhum cliente cadastrado.</td></tr>';
+                }
+            }, 300);
+        }
+    }
+});
+</script>
+
 {% endblock %}
