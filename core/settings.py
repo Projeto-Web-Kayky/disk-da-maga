@@ -67,7 +67,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('postgresql://bancomaga_user:1i19zINGaQNdVjuJ3LPQGV3uZLofnmmd@dpg-d4ir444hg0os73a558ag-a/bancomaga'),
+        default=os.environ.get('postgresql://bancomaga_user:1i19zINGaQNdVjuJ3LPQGV3uZLofnmmd@dpg-d4ir444hg0os73a558ag-a.frankfurt-postgres.render.com/bancomaga'),
         conn_max_age=600,
         conn_health_checks=True,
     )
