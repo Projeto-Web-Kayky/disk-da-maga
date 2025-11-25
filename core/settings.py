@@ -10,12 +10,13 @@ SECRET_KEY = (
     'django-insecure-a(b!^7qrwt&@t1k)zgf3j00_!z^nq+q8=k6qw%g22vc788iw1*'
 )
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
-    "disk-da-maga.onrender.com",
+    "0.0.0.0",
+    "disk-da-maga.onrender.com",  # substitua se for outro nome
 ]
 
 
@@ -36,13 +37,13 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -66,8 +67,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('postgresql://bancomaga_user:1i19zINGaQNdVjuJ3LPQGV3uZLofnmmd@dpg-d4ir444hg0os73a558ag-a/bancomaga'),
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
         conn_max_age=600,
         conn_health_checks=True,
     )

@@ -10,7 +10,6 @@ dj-database-url==3.0.1
 Django==5.2.7
 flake8==4.0.1
 fonttools==4.60.1
-gunicorn==23.0.0
 kiwisolver==1.4.9
 MarkupSafe==3.0.3
 matplotlib==3.10.7
@@ -32,4 +31,3 @@ sqlparse==0.5.3
 tomli==2.3.0
 tzdata==2025.2
 watchdog==6.0.0
-whitenoise==6.11.0
