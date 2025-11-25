@@ -62,7 +62,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.environ.get("DATABASE_URL"),
+        default=os.environ.get("postgresql://disk_maga_db_user:Ubhv8o0oisWIvp0qlqHbbfNBasfECx5d@dpg-d4iv2sngi27c73et2b60-a.oregon-postgres.render.com/disk_maga_db"),
         conn_max_age=600,
         conn_health_checks=True,
     )
