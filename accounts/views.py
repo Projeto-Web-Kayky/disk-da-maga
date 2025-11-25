@@ -6,7 +6,7 @@ from .form import LoginForm
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('product_list')
+        return redirect('dashboard')
 
     form = LoginForm(request.POST or None)
 
@@ -17,7 +17,7 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('product_list')
+                return redirect('dashboard')
             else:
                 messages.error(request, 'Usuário ou senha inválidos.')
 
