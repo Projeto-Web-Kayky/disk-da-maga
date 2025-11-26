@@ -1,9 +1,13 @@
+from django.http import JsonResponse
 from . import views
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts.views import login_view
+
+def ping(request):
+    return JsonResponse({"status": "OK"}, status=200)
 
 urlpatterns = [
     path('base/', views.base_view, name='base_view'),
@@ -14,4 +18,6 @@ urlpatterns = [
     path('clients/', include('clients.urls')),
     path('sales/', include('sales.urls')),
     path('dashboard/', include('dashboard.urls')),
+    path('ping/', ping),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
