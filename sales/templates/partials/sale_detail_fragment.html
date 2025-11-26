@@ -47,9 +47,9 @@
 
         <div>
             <div class="card bg-red-900 text-white shadow p-4 rounded-lg space-y-2">
-                <p class="font-semibold">Total: R${{ sale.total }}</p>
-                <p>Pago: R${{ sale.paid_amount }}</p>
-                <p class="mb-3">Saldo: R${{ sale.balance }}</p>
+                <p class="font-semibold">Total: R$ {{ sale.total|floatformat:2 }}</p>
+                <p>Pago: R$ {{ sale.paid_amount|floatformat:2 }}</p>
+                <p class="mb-3">Saldo: R$ {{ sale.balance|floatformat:2 }}</p>
 
                 {% if sale.status == 'open' %}
                 <button class="btn btn-success btn-sm w-full"
