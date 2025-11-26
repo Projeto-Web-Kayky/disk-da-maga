@@ -15,9 +15,12 @@ def client_list(request):
     if request.method == 'POST' and form.is_valid():
         client = form.save(commit=False)
         # Se o cliente está sendo criado (não tem pk) e tem dívida cadastrada,
-        # copiar para initial_debt
+        # copiar para initial_debt e garantir que client_debts seja igual
         if not client.pk and client.client_debts:
             client.initial_debt = client.client_debts
+            # Garantir que client_debts seja igual a initial_debt na criação
+            # (será recalculado depois quando houver vendas)
+            client.client_debts = client.initial_debt
         client.save()
         return redirect('client_list')
 
@@ -176,33 +179,37 @@ def client_clear_debts(request, client_id):
                 )
         
         # Quitar pagamentos fiados primeiro (começando pelos mais antigos)
-        remaining = amount_to_clear
-        for payment in payments_fiado:
-            if remaining <= 0:
-                break
-            
-            if payment.amount <= remaining:
-                # Quitar o pagamento inteiro
-                payment.method = 'quitado'
-                payment.save(update_fields=['method'])
-                remaining -= payment.amount
-                remaining = remaining.quantize(Decimal('0.01'))
-            else:
-                # Quitar parcialmente: dividir o pagamento
-                # Criar um novo pagamento quitado com o valor a quitar
-                Payment.objects.create(
-                    sale=payment.sale,
-                    amount=remaining,
-                    method='quitado',
-                    note=f'Quitação parcial (original: R$ {payment.amount})'
-                )
-                # Reduzir o valor do pagamento original (que continua fiado)
-                payment.amount -= remaining
-                payment.amount = payment.amount.quantize(Decimal('0.01'))
-                payment.save(update_fields=['amount'])
-                remaining = Decimal('0.00')
+        remaining = amount_to_clear.quantize(Decimal('0.01'))
         
-        # Se ainda sobrar valor, quitar da dívida inicial
+        # Se houver pagamentos fiados, quitá-los primeiro
+        if payments_fiado.exists():
+            for payment in payments_fiado:
+                if remaining <= 0:
+                    break
+                
+                if payment.amount <= remaining:
+                    # Quitar o pagamento inteiro
+                    payment.method = 'quitado'
+                    payment.save(update_fields=['method'])
+                    remaining -= payment.amount
+                    remaining = remaining.quantize(Decimal('0.01'))
+                else:
+                    # Quitar parcialmente: dividir o pagamento
+                    # Criar um novo pagamento quitado com o valor a quitar
+                    Payment.objects.create(
+                        sale=payment.sale,
+                        amount=remaining,
+                        method='quitado',
+                        note=f'Quitação parcial (original: R$ {payment.amount})'
+                    )
+                    # Reduzir o valor do pagamento original (que continua fiado)
+                    payment.amount -= remaining
+                    payment.amount = payment.amount.quantize(Decimal('0.01'))
+                    payment.save(update_fields=['amount'])
+                    remaining = Decimal('0.00')
+        
+        # Se ainda sobrar valor OU se não houver pagamentos fiados mas houver dívida inicial,
+        # quitar da dívida inicial
         if remaining > 0 and divida_inicial > 0:
             nova_divida_inicial = max(Decimal('0.00'), divida_inicial - remaining)
             nova_divida_inicial = nova_divida_inicial.quantize(Decimal('0.01'))
@@ -212,19 +219,49 @@ def client_clear_debts(request, client_id):
         # Recalcular a dívida (agora será initial_debt + pagamentos fiados restantes)
         from sales.models import Sale
         sales = Sale.objects.filter(client=client)
-        for sale in sales:
-            sale.update_client_debt_cache()
+        
+        # Se houver vendas, atualizar via update_client_debt_cache
+        if sales.exists():
+            for sale in sales:
+                sale.update_client_debt_cache()
+        else:
+            # Se não houver vendas, atualizar client_debts diretamente
+            # Recarregar o cliente para garantir que initial_debt está atualizado
+            client.refresh_from_db()
+            
+            # Recalcular total de pagamentos fiados restantes
+            pagamentos_fiado_restantes = Payment.objects.filter(
+                sale__client=client,
+                method__iexact='fiado'
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            pagamentos_fiado_restantes = pagamentos_fiado_restantes.quantize(Decimal('0.01'))
+            
+            # Atualizar client_debts = initial_debt + pagamentos fiados restantes
+            nova_divida_total = (client.initial_debt + pagamentos_fiado_restantes).quantize(Decimal('0.01'))
+            client.client_debts = nova_divida_total
+            client.save(update_fields=['client_debts'])
         
         client.refresh_from_db()
     
     if is_htmx:
         # Recarregar o cliente para garantir dados atualizados
         client.refresh_from_db()
+        
+        # Recalcular total_fiado para o template
+        from django.db.models import Sum
+        total_fiado = Payment.objects.filter(
+            sale__client=client,
+            method__iexact='fiado'
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        
         # Retornar o modal atualizado com trigger para atualizar dashboard
         response = render(
             request,
             'partials/client_detail_modal.html',
-            {'client': client}
+            {
+                'client': client,
+                'total_fiado': total_fiado
+            }
         )
         response['HX-Trigger'] = json.dumps({
             'debtsCleared': {'clientId': client_id},
