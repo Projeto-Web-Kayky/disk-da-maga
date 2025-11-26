@@ -7,8 +7,9 @@ from django.db.models import Q, F
 from .models import Sale, SaleItem
 from products.models import Product
 from clients.models import Client
+from django.contrib.auth.decorators import login_required
 
-
+@login_required
 def sale_list(request):
     sales = Sale.objects.all().order_by('-created_at')
     return render(
@@ -17,7 +18,7 @@ def sale_list(request):
         {'sales': sales, 'section_name': 'Lista de Vendas'},
     )
 
-
+@login_required
 def sale_create(request):
     clients = Client.objects.all()
     if request.method == 'POST':
