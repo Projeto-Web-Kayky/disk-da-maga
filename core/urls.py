@@ -6,10 +6,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from accounts.views import login_view
 
-def ping(request):
-    return JsonResponse({"status": "OK"}, status=200)
-
 urlpatterns = [
+    path('ping/', views.ping),
     path('base/', views.base_view, name='base_view'),
     path('admin/', admin.site.urls),
     path('', login_view, name='login'),
@@ -18,6 +16,5 @@ urlpatterns = [
     path('clients/', include('clients.urls')),
     path('sales/', include('sales.urls')),
     path('dashboard/', include('dashboard.urls')),
-    path('ping/', ping),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
