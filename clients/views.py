@@ -55,6 +55,13 @@ def client_detail(request, client_id):
         request, 'partials/client_detail_modal.html', context
     )
 
+@login_required
+def client_delete(request, client_id):
+    client = get_object_or_404(Client, pk=client_id) 
+    return render(request, 'partials/client_delete_modal.html', {
+        'client': client
+    })
+
 
 @login_required
 def client_edit(request, client_id):
