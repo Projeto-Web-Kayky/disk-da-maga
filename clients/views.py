@@ -4,6 +4,10 @@ from clients.forms import ClientForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse, HttpResponseBadRequest
+from sales.models import Payment
+from django.db.models import Sum
+from decimal import Decimal, InvalidOperation
+from django.db import transaction
 import json
 
 
@@ -14,8 +18,6 @@ def client_list(request):
 
     if request.method == 'POST' and form.is_valid():
         client = form.save(commit=False)
-        # Se o cliente está sendo criado (não tem pk) e tem dívida cadastrada,
-        # copiar para initial_debt
         if not client.pk and client.client_debts:
             client.initial_debt = client.client_debts
         client.save()
@@ -35,9 +37,6 @@ def client_list(request):
 @login_required
 def client_detail(request, client_id):
     """Render client detail modal fragment."""
-    from sales.models import Payment
-    from django.db.models import Sum
-    from decimal import Decimal
     
     client = get_object_or_404(Client, pk=client_id)
     
@@ -49,7 +48,7 @@ def client_detail(request, client_id):
     
     context = {
         'client': client,
-        'total_fiado': total_fiado,  # Apenas pagamentos fiados (sem dívida inicial)
+        'total_fiado': total_fiado,
     }
     return render(
         request, 'partials/client_detail_modal.html', context
@@ -118,10 +117,6 @@ def client_delete(request, client_id):
 @require_POST
 def client_clear_debts(request, client_id):
     """Quita dívidas do cliente (pagamentos fiados e/ou dívida inicial)"""
-    from decimal import Decimal, InvalidOperation
-    from django.db import transaction
-    from sales.models import Payment
-    
     client = get_object_or_404(Client, pk=client_id)
     is_htmx = request.headers.get('Hx-Request') == 'true'
     
