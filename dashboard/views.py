@@ -51,6 +51,16 @@ def _get_report_data(start_date, end_date):
     for sale in sales:
         month_key = sale.created_at.strftime('%Y-%m')
         sales_by_month[month_key] += sale.total
+    
+    # Adicionar quitações de dívidas iniciais ao total de vendas por mês
+    from clients.models import DebtPayment
+    quitacoes = DebtPayment.objects.filter(
+        created_at__gte=start_date,
+        created_at__lte=end_date,
+    )
+    for quitacao in quitacoes:
+        month_key = quitacao.created_at.strftime('%Y-%m')
+        sales_by_month[month_key] += quitacao.amount
 
     # Ordenar por mês
     months_data = sorted(sales_by_month.items())
@@ -119,6 +129,11 @@ def _get_report_data(start_date, end_date):
     total_vendas = sales.aggregate(
         total=Sum(F('items__price') * F('items__quantity'))
     )['total'] or Decimal('0.00')
+    
+    # Adicionar quitações de dívidas iniciais ao total
+    total_quitacoes = quitacoes.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    total_vendas += total_quitacoes
+    
     total_produtos_vendidos = (
         SaleItem.objects.filter(sale__in=sales).aggregate(
             total=Sum('quantity')
@@ -181,6 +196,15 @@ def dashboard_view(request):
     total_sales_today = sales_today.aggregate(
         total=Sum(F('items__price') * F('items__quantity'))
     )['total'] or Decimal('0.00')
+    
+    # Adicionar quitações de dívidas iniciais ao total de vendas do dia
+    from clients.models import DebtPayment
+    quitacoes_divida_inicial_today = DebtPayment.objects.filter(
+        created_at__gte=today_start,
+        created_at__lte=today_end,
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    total_sales_today += quitacoes_divida_inicial_today
+    
     count_sales_today = sales_today.count()
 
     # Vendas do mês (finalizadas)
@@ -192,6 +216,14 @@ def dashboard_view(request):
     total_sales_month = sales_month.aggregate(
         total=Sum(F('items__price') * F('items__quantity'))
     )['total'] or Decimal('0.00')
+    
+    # Adicionar quitações de dívidas iniciais ao total de vendas do mês
+    quitacoes_divida_inicial_month = DebtPayment.objects.filter(
+        created_at__gte=month_start,
+        created_at__lte=now,
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    total_sales_month += quitacoes_divida_inicial_month
+    
     count_sales_month = sales_month.count()
 
     # Vendas abertas (pendentes)
@@ -330,6 +362,16 @@ def generate_report_data(request):
     for sale in sales:
         month_key = sale.created_at.strftime('%Y-%m')
         sales_by_month[month_key] += sale.total
+    
+    # Adicionar quitações de dívidas iniciais ao total de vendas por mês
+    from clients.models import DebtPayment
+    quitacoes_report = DebtPayment.objects.filter(
+        created_at__gte=start_date,
+        created_at__lte=end_date,
+    )
+    for quitacao in quitacoes_report:
+        month_key = quitacao.created_at.strftime('%Y-%m')
+        sales_by_month[month_key] += quitacao.amount
 
     # Ordenar por mês
     months_data = sorted(sales_by_month.items())
@@ -405,6 +447,11 @@ def generate_report_data(request):
     total_vendas = sales.aggregate(
         total=Sum(F('items__price') * F('items__quantity'))
     )['total'] or Decimal('0.00')
+    
+    # Adicionar quitações de dívidas iniciais ao total
+    total_quitacoes_report = quitacoes_report.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    total_vendas += total_quitacoes_report
+    
     total_produtos_vendidos = (
         SaleItem.objects.filter(sale__in=sales).aggregate(
             total=Sum('quantity')
@@ -499,6 +546,16 @@ def generate_report_pdf(request):
     for sale in sales:
         month_key = sale.created_at.strftime('%Y-%m')
         sales_by_month[month_key] += sale.total
+    
+    # Adicionar quitações de dívidas iniciais ao total de vendas por mês
+    from clients.models import DebtPayment
+    quitacoes_pdf = DebtPayment.objects.filter(
+        created_at__gte=start_date,
+        created_at__lte=end_date,
+    )
+    for quitacao in quitacoes_pdf:
+        month_key = quitacao.created_at.strftime('%Y-%m')
+        sales_by_month[month_key] += quitacao.amount
 
     # Ordenar por mês
     months_data = sorted(sales_by_month.items())
@@ -562,6 +619,11 @@ def generate_report_pdf(request):
     total_vendas = sales.aggregate(
         total=Sum(F('items__price') * F('items__quantity'))
     )['total'] or Decimal('0.00')
+    
+    # Adicionar quitações de dívidas iniciais ao total
+    total_quitacoes_pdf = quitacoes_pdf.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    total_vendas += total_quitacoes_pdf
+    
     total_produtos_vendidos = (
         SaleItem.objects.filter(sale__in=sales).aggregate(
             total=Sum('quantity')
